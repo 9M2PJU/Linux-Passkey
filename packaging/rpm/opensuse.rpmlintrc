@@ -1,0 +1,8 @@
+# Known and accepted on openSUSE; anything else fails CI.
+# Words of the trade that the dictionary lacks.
+addFilter("spelling-error")
+# Any hicolor-icon-theme will do: the icons only need its folders.
+addFilter("branding-requires-unversioned")
+# polkit-user-privilege cannot be filtered: openSUSE's security team
+# whitelists polkit actions for its own distribution. auth_self (the user's
+# own password, never cached) is what verification needs, so CI accepts it.

@@ -131,7 +131,7 @@ jobs:
             --define "_build_name_fmt %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm" \
             ${{ matrix.dist && format('--define "dist {0}"', matrix.dist) || '' }}
       - name: Lint
-        run: rpmlint -r packaging/rpm/linux-passkey.rpmlintrc rpms/*.rpm
+        run: rpmlint -r packaging/rpm/${{ matrix.distro }}.rpmlintrc rpms/*.rpm
       - name: Install and start
         run: |
           ${{ matrix.install }} "$PWD"/rpms/*.rpm

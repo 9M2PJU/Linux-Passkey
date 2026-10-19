@@ -15,14 +15,19 @@ PORT=${PORT:-8765}
 KEY=http://127.0.0.1:$PORT/linux-passkey
 INSTALL="linux-passkey gnome-shell-extension-linux-passkey"
 
+LOGS=$(mktemp -d)
+
 python3 "$HERE/serve-repo.py" "$OUT/tree" "$PACKAGES" "$PORT" 2>/dev/null &
 server=$!
-trap 'kill $server' EXIT
+trap 'kill $server; rm -rf "$LOGS"' EXIT
 sleep 1
 
+# The families install at the same time; each one's output is shown after.
+pids=""
 run() { # image script
-    echo "== $1"
-    docker run --rm --network host -e KEY="$KEY" -e FPR="$FPR" -e INSTALL="$INSTALL" "$1" sh -euc "$2"
+    log=$LOGS/$(echo "$1" | tr /: __)
+    docker run --rm --network host -e KEY="$KEY" -e FPR="$FPR" -e INSTALL="$INSTALL" "$1" sh -euc "$2" >"$log" 2>&1 &
+    pids="$pids $!:$1"
 }
 
 run ubuntu:24.04 '
@@ -52,4 +57,12 @@ printf "\n[linux-passkey]\nServer = %s\n" $KEY/arch >> /etc/pacman.conf
 pacman -Sy --noconfirm $INSTALL >/dev/null
 passkeyd --version'
 
+failed=0
+for job in $pids; do
+    pid=${job%%:*} image=${job#*:}
+    if wait "$pid"; then status=ok; else status=FAILED; failed=1; fi
+    echo "== $image: $status"
+    cat "$LOGS/$(echo "$image" | tr /: __)"
+done
+[ "$failed" = 0 ] || exit 1
 echo "All four installed."
