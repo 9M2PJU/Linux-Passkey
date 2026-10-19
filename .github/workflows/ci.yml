@@ -14,8 +14,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             python3-gi python3-cryptography python3-pytest python3-pyflakes \
-            gir1.2-glib-2.0 dbus nodejs
+            gir1.2-glib-2.0 dbus desktop-file-utils appstream libxml2-utils polkitd
           sudo pip3 install --break-system-packages "fido2>=2"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - name: Lint
         run: make lint
       - name: Test
@@ -30,11 +33,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            debhelper dh-python python3-all zip \
+            debhelper dh-python python3-all zip gettext lintian \
             python3-gi python3-cryptography python3-pytest
       - name: Build Debian packages
         run: |
           make deb
+          lintian --fail-on warning ../*.deb
           mkdir -p dist && mv ../*.deb dist/
       - name: Build GNOME Shell extension
         run: make extension-zip

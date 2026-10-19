@@ -63,9 +63,15 @@ class Credential:
 
 
 class CredentialStore:
+    FILENAME = "credentials.enc"
+
+    @classmethod
+    def default_path(cls):
+        return os.path.join(paths.data_dir(), cls.FILENAME)
+
     def __init__(self, master_key, directory=None):
         self.directory = directory or paths.data_dir()
-        self.path = os.path.join(self.directory, "credentials.enc")
+        self.path = os.path.join(self.directory, self.FILENAME)
         self._lock = threading.RLock()
         self._listeners = []
         self._set_master(master_key)
@@ -200,6 +206,21 @@ class CredentialStore:
     def list(self):
         with self._lock:
             return [dict(r) for r in self._records.values()]
+
+    def record(self, cred_id_b64):
+        with self._lock:
+            rec = self._records.get(cred_id_b64)
+            return dict(rec) if rec else None
+
+    def update_user(self, cred_id_b64, name, display_name):
+        with self._lock:
+            rec = self._records.get(cred_id_b64)
+            if rec is None:
+                return False
+            rec["user_name"] = name
+            rec["display_name"] = display_name
+            self._save()
+            return True
 
     def delete(self, cred_id_b64):
         with self._lock:

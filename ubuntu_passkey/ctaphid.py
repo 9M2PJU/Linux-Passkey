@@ -1,5 +1,6 @@
 """CTAPHID transport: framing, channels and keepalives over 64-byte reports."""
 
+import collections
 import logging
 import os
 import struct
@@ -17,6 +18,7 @@ MAX_MESSAGE = INIT_DATA + 128 * CONT_DATA  # 7609 bytes
 BROADCAST_CID = 0xFFFFFFFF
 TRANSACTION_TIMEOUT = 0.5  # seconds between packets of one message
 KEEPALIVE_INTERVAL = 0.1
+MAX_CHANNELS = 64  # least recently allocated channels are dropped beyond this
 
 CMD_PING = 0x01
 CMD_MSG = 0x03
@@ -88,8 +90,12 @@ class CtapHidDevice:
         self.on_wink = on_wink
         self._send_lock = threading.Lock()
         self._lock = threading.Lock()
-        self._channels = set()
+        self._channels = collections.OrderedDict()
         self._assembly = None
+        self._watchdog = threading.Thread(
+            target=self._watch_timeouts, name="ctaphid-timeout", daemon=True
+        )
+        self._watchdog.start()
         self._busy = None  # (cid, cancel_event, status_holder)
         self._lock_cid = None
         self._lock_until = 0.0
@@ -167,6 +173,17 @@ class CtapHidDevice:
             self._assembly = None
         self._dispatch(asm.cid, asm.cmd, bytes(asm.data))
 
+    def _watch_timeouts(self):
+        """Abort a message whose next packet does not arrive in time."""
+        while True:
+            time.sleep(TRANSACTION_TIMEOUT / 5)
+            with self._lock:
+                asm = self._assembly
+                if asm is None or time.monotonic() - asm.touched <= TRANSACTION_TIMEOUT:
+                    continue
+                self._assembly = None
+            self._error(asm.cid, ERR_MSG_TIMEOUT)
+
     # -- commands ---------------------------------------------------------
 
     def _dispatch(self, cid, cmd, data):
@@ -228,7 +245,9 @@ class CtapHidDevice:
                 new_cid = struct.unpack(">I", os.urandom(4))[0]
                 if new_cid not in (0, BROADCAST_CID) and new_cid not in self._channels:
                     break
-            self._channels.add(new_cid)
+            self._channels[new_cid] = True
+            while len(self._channels) > MAX_CHANNELS:
+                self._channels.popitem(last=False)
         else:
             new_cid = cid
             # INIT on an existing channel aborts any pending transaction on it.

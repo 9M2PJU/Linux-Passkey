@@ -39,6 +39,12 @@ export function describe(operation, rpId, accounts) {
             body: _('You already have a passkey for %s on this device.').format(rp),
             action: _('OK'),
         };
+    case 'manage':
+        return {
+            title: _('Manage Passkeys?'),
+            body: _('A browser wants to view and manage the passkeys on this device.'),
+            action: _('Allow'),
+        };
     case 'reset':
         return {
             title: _('Delete All Passkeys?'),

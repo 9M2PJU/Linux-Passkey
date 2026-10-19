@@ -49,9 +49,14 @@ class PasskeyIndicator extends PanelMenu.Button {
             this._verifyItem.visible = false;
             return;
         }
-        this._statusItem.label.text = status.device_active
-            ? _('Passkeys ready')
-            : _('Security key unavailable');
+        if (status.state === 'error')
+            this._statusItem.label.text = _('Passkeys cannot be opened');
+        else if (status.state === 'starting')
+            this._statusItem.label.text = _('Opening passkeys…');
+        else if (status.device_active)
+            this._statusItem.label.text = _('Passkeys ready');
+        else
+            this._statusItem.label.text = _('Security key unavailable');
         const count = status.credential_count ?? 0;
         this._countItem.label.text = ngettext('%d passkey', '%d passkeys', count).format(count);
         this._countItem.visible = true;

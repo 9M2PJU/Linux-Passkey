@@ -115,6 +115,8 @@ def _decode(data, pos, depth):
             key, pos = _decode(data, pos, depth + 1)
             if isinstance(key, (list, dict)):
                 raise CBORError("unhashable map key")
+            if key in out:
+                raise CBORError("duplicate map key")
             out[key], pos = _decode(data, pos, depth + 1)
         return out, pos
     if major == 6:

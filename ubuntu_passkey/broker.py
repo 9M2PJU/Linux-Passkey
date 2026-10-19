@@ -140,12 +140,20 @@ class ApprovalBroker:
                 "timeout": int(timeout),
             }
         )
+        # The request goes through stdin: command lines are visible to every
+        # local user in /proc, and the site and account names are private.
         proc = subprocess.Popen(
-            self._fallback_command() + [spec],
+            self._fallback_command(),
+            stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
             text=True,
         )
+        try:
+            proc.stdin.write(spec)
+            proc.stdin.close()
+        except OSError:
+            pass
         deadline = time.monotonic() + timeout
         try:
             while True:

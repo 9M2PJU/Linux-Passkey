@@ -131,3 +131,20 @@ def test_bad_sequence():
     dev.handle_report(packets[0])
     dev.handle_report(packets[2])  # skip seq 0
     assert out.message() == (cid, ctaphid.CMD_ERROR, bytes([ctaphid.ERR_INVALID_SEQ]))
+
+
+def test_message_timeout():
+    dev, out, _ = make()
+    cid = init(dev, out)
+    packets = ctaphid.frame(cid, ctaphid.CMD_PING, os.urandom(200))
+    dev.handle_report(packets[0])  # and then nothing
+    assert out.message(timeout=2) == (cid, ctaphid.CMD_ERROR, bytes([ctaphid.ERR_MSG_TIMEOUT]))
+
+
+def test_channel_table_is_bounded():
+    dev, out, _ = make()
+    first = init(dev, out)
+    for _ in range(ctaphid.MAX_CHANNELS):
+        init(dev, out)
+    send(dev, first, ctaphid.CMD_PING, b"x")
+    assert out.message() == (first, ctaphid.CMD_ERROR, bytes([ctaphid.ERR_INVALID_CHANNEL]))

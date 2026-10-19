@@ -243,7 +243,7 @@ def test_silent_assertion_lists_all_accounts(hid_device, ui):
             {"id": "example.com"},
             {"id": name.encode(), "name": name},
             [{"type": "public-key", "alg": -7}],
-            options={"rk": True},
+            options={"rk": True, "uv": True},
         )
     prompts = len(ui.prompts)
     first = ctap.get_assertion("example.com", cdh, options={"up": False})
@@ -253,3 +253,167 @@ def test_silent_assertion_lists_all_accounts(hid_device, ui):
     assert handles == {b"a1", b"a2", b"a3"}
     assert not first.auth_data.is_user_present()
     assert len(ui.prompts) == prompts  # silent: nobody was asked
+
+
+def test_silent_probe_keeps_token_presence(hid_device, ui):
+    """Chrome probes exclude lists with up=false under the same token; the
+    presence confirmed when the token was issued must survive for the
+    registration that follows (one prompt in total)."""
+    import hashlib
+
+    from fido2.ctap2.pin import ClientPin
+
+    ctap = Ctap2(hid_device)
+    client_pin = ClientPin(ctap)
+    perms = ClientPin.PERMISSION.MAKE_CREDENTIAL | ClientPin.PERMISSION.GET_ASSERTION
+    token = client_pin.get_uv_token(perms, "example.com")
+    assert len(ui.prompts) == 1 and ui.verifications == 1
+
+    cdh = hashlib.sha256(b"probe").digest()
+    with pytest.raises(Exception):  # no credentials: CTAP2_ERR_NO_CREDENTIALS
+        ctap.get_assertion(
+            "example.com",
+            cdh,
+            allow_list=[{"type": "public-key", "id": b"\x01" * 80}],
+            options={"up": False},
+            pin_uv_param=client_pin.protocol.authenticate(token, cdh),
+            pin_uv_protocol=client_pin.protocol.VERSION,
+        )
+    cdh = hashlib.sha256(b"make").digest()
+    att = ctap.make_credential(
+        cdh,
+        {"id": "example.com"},
+        {"id": b"frank", "name": "frank"},
+        [{"type": "public-key", "alg": -7}],
+        options={"rk": True},
+        pin_uv_param=client_pin.protocol.authenticate(token, cdh),
+        pin_uv_protocol=client_pin.protocol.VERSION,
+    )
+    assert att.auth_data.is_user_present() and att.auth_data.is_user_verified()
+    assert len(ui.prompts) == 1  # no second prompt
+
+
+def _token(ctap, ui, permissions, rp_id=None):
+    from fido2.ctap2.pin import ClientPin
+
+    client_pin = ClientPin(ctap)
+    return client_pin, client_pin.get_uv_token(permissions, rp_id)
+
+
+def test_discoverable_requires_verification(hid_device):
+    import hashlib
+
+    from fido2.ctap import CtapError
+
+    with pytest.raises(CtapError) as err:
+        Ctap2(hid_device).make_credential(
+            hashlib.sha256(b"x").digest(),
+            {"id": "example.com"},
+            {"id": b"gina", "name": "gina"},
+            [{"type": "public-key", "alg": -7}],
+            options={"rk": True},
+        )
+    assert err.value.code == CtapError.ERR.PUAT_REQUIRED
+
+
+def test_user_selected_flag(hid_device, ui):
+    register(hid_device, name="alice")
+    register(hid_device, name="bob")
+    import hashlib
+
+    from fido2.ctap2.pin import ClientPin
+
+    ctap = Ctap2(hid_device)
+    ui.answer = 1
+    client_pin, token = _token(ctap, ui, ClientPin.PERMISSION.GET_ASSERTION, "example.com")
+    cdh = hashlib.sha256(b"sel").digest()
+    assertion = ctap.get_assertion(
+        "example.com",
+        cdh,
+        pin_uv_param=client_pin.protocol.authenticate(token, cdh),
+        pin_uv_protocol=client_pin.protocol.VERSION,
+    )
+    assert assertion.user_selected is True
+    assert assertion.number_of_credentials is None
+    assert ui.prompts[-1].operation == "choose"
+
+
+def test_credential_management(hid_device, ui, store):
+    from fido2.ctap2 import CredentialManagement
+    from fido2.ctap2.pin import ClientPin
+
+    _, a, _ = register(hid_device, name="alice")
+    register(hid_device, name="bob")
+    other = Fido2Client(hid_device, DefaultClientDataCollector("https://ubuntu.com"))
+    srv = Fido2Server(PublicKeyCredentialRpEntity(id="ubuntu.com", name="Ubuntu"))
+    opts, st = srv.register_begin(
+        PublicKeyCredentialUserEntity(id=b"carl", name="carl", display_name="Carl"),
+        resident_key_requirement=ResidentKeyRequirement.REQUIRED,
+    )
+    srv.register_complete(st, other.make_credential(opts.public_key))
+
+    ctap = Ctap2(hid_device)
+    assert ctap.info.options["credMgmt"] is True
+    client_pin, token = _token(ctap, ui, ClientPin.PERMISSION.CREDENTIAL_MGMT)
+    assert ui.prompts[-1].operation == "manage"
+    cm = CredentialManagement(ctap, client_pin.protocol, token)
+
+    meta = cm.get_metadata()
+    assert meta[CredentialManagement.RESULT.EXISTING_CRED_COUNT] == 3
+    rps = {r[CredentialManagement.RESULT.RP]["id"]: r for r in cm.enumerate_rps()}
+    assert set(rps) == {"example.com", "ubuntu.com"}
+    assert rps["ubuntu.com"][CredentialManagement.RESULT.RP]["name"] == "Ubuntu"
+
+    rp_hash = rps["example.com"][CredentialManagement.RESULT.RP_ID_HASH]
+    creds = cm.enumerate_creds(rp_hash)
+    names = sorted(c[CredentialManagement.RESULT.USER]["name"] for c in creds)
+    assert names == ["alice", "bob"]
+    alice = next(c for c in creds if c[CredentialManagement.RESULT.USER]["name"] == "alice")
+    # The reported public key is the one the website registered.
+    assert alice[CredentialManagement.RESULT.PUBLIC_KEY] == dict(a.credential_data.public_key)
+
+    descriptor = alice[CredentialManagement.RESULT.CREDENTIAL_ID]
+    cm.update_user_info(descriptor, {"id": b"alice" * 4, "name": "alice2", "displayName": "Alice Two"})
+    assert any(r["user_name"] == "alice2" for r in store.list())
+
+    cm.delete_cred(descriptor)
+    assert sorted(r["user_name"] for r in store.list()) == ["bob", "carl"]
+
+
+def test_credential_management_requires_token(hid_device):
+    from fido2.ctap import CtapError
+
+    with pytest.raises(CtapError) as err:
+        Ctap2(hid_device).credential_mgmt(0x01)
+    assert err.value.code == CtapError.ERR.PUAT_REQUIRED
+
+
+def test_reset_only_after_power_up(hid_device, authenticator):
+    from fido2.ctap import CtapError
+
+    authenticator.powered_up -= 60
+    with pytest.raises(CtapError) as err:
+        Ctap2(hid_device).reset()
+    assert err.value.code == CtapError.ERR.NOT_ALLOWED
+
+
+def test_enterprise_attestation_rejected(hid_device):
+    import hashlib
+
+    from fido2.ctap import CtapError
+
+    with pytest.raises(CtapError) as err:
+        Ctap2(hid_device).make_credential(
+            hashlib.sha256(b"x").digest(),
+            {"id": "example.com"},
+            {"id": b"ep", "name": "ep"},
+            [{"type": "public-key", "alg": -7}],
+            enterprise_attestation=1,
+        )
+    assert err.value.code == CtapError.ERR.INVALID_PARAMETER
+
+
+def test_get_info_remaining_capacity(hid_device):
+    before = Ctap2(hid_device).get_info().remaining_disc_creds
+    register(hid_device)
+    assert Ctap2(hid_device).get_info().remaining_disc_creds == before - 1

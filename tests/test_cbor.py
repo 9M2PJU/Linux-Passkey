@@ -53,3 +53,8 @@ def test_matches_fido2_library():
     obj = {1: b"x" * 300, 2: {"id": "example.com"}, 3: [-7, -8], "up": True}
     assert cbor.encode(obj) == fido_cbor.encode(obj)
     assert cbor.decode(fido_cbor.encode(obj)) == obj
+
+
+def test_rejects_duplicate_map_keys():
+    with pytest.raises(cbor.CBORError):
+        cbor.decode(bytes.fromhex("a201020103"))  # {1: 2, 1: 3}

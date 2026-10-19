@@ -9,6 +9,7 @@ import sys
 
 from gi.repository import Adw, GLib, Gtk
 
+from ..i18n import _
 from ..prompts import describe
 
 APPROVE_EXIT = 0
@@ -17,7 +18,7 @@ DENY_EXIT = 1
 
 class PromptWindow(Adw.ApplicationWindow):
     def __init__(self, app, spec):
-        super().__init__(application=app, title="Ubuntu Passkey")
+        super().__init__(application=app, title=_("Ubuntu Passkey"))
         self.spec = spec
         self.result = None
         self.set_default_size(420, -1)
@@ -49,7 +50,7 @@ class PromptWindow(Adw.ApplicationWindow):
         self.choice = 0
         shown = [a for a in accounts if a]
         if operation in ("authenticate", "choose") and len(shown) > 1:
-            group = Adw.PreferencesGroup(title="Account")
+            group = Adw.PreferencesGroup(title=_("Account"))
             first = None
             for index, account in enumerate(accounts):
                 check = Gtk.CheckButton()
@@ -59,7 +60,7 @@ class PromptWindow(Adw.ApplicationWindow):
                 else:
                     check.set_group(first)
                 check.connect("toggled", self._on_toggle, index)
-                row = Adw.ActionRow(title=account or "Unnamed account")
+                row = Adw.ActionRow(title=account or _("Unnamed account"))
                 row.add_prefix(check)
                 row.set_activatable_widget(check)
                 group.add(row)
@@ -71,7 +72,7 @@ class PromptWindow(Adw.ApplicationWindow):
 
         if spec.get("verify"):
             hint = Gtk.Label(
-                label="You will be asked to confirm your identity next.", wrap=True
+                label=_("You will be asked to confirm your identity next."), wrap=True
             )
             hint.add_css_class("dim-label")
             box.append(hint)
@@ -79,7 +80,7 @@ class PromptWindow(Adw.ApplicationWindow):
         buttons = Gtk.Box(spacing=12, homogeneous=True)
         buttons.set_margin_top(12)
         if operation != "exclude":
-            deny = Gtk.Button(label="Cancel")
+            deny = Gtk.Button(label=_("Cancel"))
             deny.connect("clicked", lambda *_: self.finish(False))
             buttons.append(deny)
         approve = Gtk.Button(label=action)

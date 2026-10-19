@@ -33,6 +33,7 @@ INTERFACE_XML = """
       <arg type="s" name="id" direction="in"/>
       <arg type="b" name="deleted" direction="out"/>
     </method>
+    <method name="Retry"/>
     <method name="ResetAll">
       <arg type="b" name="done" direction="out"/>
     </method>
@@ -155,6 +156,10 @@ class PasskeyService:
             return
         try:
             handler(sender, params.unpack(), invocation)
+        except RuntimeError as e:
+            invocation.return_dbus_error(
+                "io.github.haythmkenway.Passkey.Error.Unavailable", str(e)
+            )
         except PermissionError as e:
             invocation.return_dbus_error(
                 "org.freedesktop.DBus.Error.AccessDenied", str(e)
@@ -208,14 +213,14 @@ class PasskeyService:
 
     def _m_ListCredentials(self, sender, args, invocation):
         creds = []
-        for rec in self.daemon.store.list():
+        for rec in self.daemon.require_store().list():
             info = describe_record(rec)
             creds.append({k: _variant(v) for k, v in info.items()})
         invocation.return_value(GLib.Variant("(aa{sv})", (creds,)))
 
     def _m_DeleteCredential(self, sender, args, invocation):
         (cred_id,) = args
-        deleted = self.daemon.store.delete(cred_id)
+        deleted = self.daemon.require_store().delete(cred_id)
         invocation.return_value(GLib.Variant("(b)", (deleted,)))
 
     def _m_ResetAll(self, sender, args, invocation):
@@ -223,7 +228,7 @@ class PasskeyService:
         def work():
             done = False
             try:
-                if self.daemon.authenticator.uv_available:
+                if self.daemon.config.get("verification") != "none":
                     ok = self.broker.verify(Prompt("reset", verify=True), Request())
                 else:
                     ok = True
@@ -238,6 +243,10 @@ class PasskeyService:
 
         threading.Thread(target=work, daemon=True).start()
 
+    def _m_Retry(self, sender, args, invocation):
+        self.daemon.retry()
+        invocation.return_value(None)
+
     def _m_GetStatus(self, sender, args, invocation):
         status = self.daemon.status()
         invocation.return_value(
@@ -250,8 +259,14 @@ class PasskeyService:
             GLib.Variant("(a{sv})", ({k: _variant(v) for k, v in settings.items()},))
         )
 
+    # Settings that weaken security (verification, algorithms) can only be
+    # changed in the configuration file, not by any process on the bus.
+    SETTABLE = ("always_verify", "approval_timeout")
+
     def _m_SetSetting(self, sender, args, invocation):
         key, value = args
+        if key not in self.SETTABLE:
+            raise PermissionError("%s cannot be changed over D-Bus" % key)
         self.daemon.config.set(key, value)
         self.emit("StatusChanged")
         invocation.return_value(None)

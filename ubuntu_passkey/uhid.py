@@ -88,6 +88,22 @@ class UhidError(OSError):
     pass
 
 
+def missing_module_hint(path=UHID_PATH):
+    """Explain how to get /dev/uhid on this system."""
+    release = os.uname().release
+    module_dir = "/lib/modules/%s/kernel/drivers/hid" % release
+    try:
+        has_module = any(n.startswith("uhid.ko") for n in os.listdir(module_dir))
+    except OSError:
+        has_module = False
+    if has_module:
+        return "%s not found; run 'sudo modprobe uhid'" % path
+    return (
+        "%s not found: this kernel has no uhid module; install it with "
+        "'sudo apt install linux-modules-extra-%s'" % (path, release)
+    )
+
+
 class UhidDevice:
     """Creates the virtual device and pumps reports to/from ``on_output``."""
 
@@ -114,9 +130,7 @@ class UhidDevice:
                     "with Ubuntu Passkey and log in again" % self.path,
                 )
             if e.errno == errno.ENOENT:
-                raise UhidError(
-                    e.errno, "%s not found; run 'sudo modprobe uhid'" % self.path
-                )
+                raise UhidError(e.errno, missing_module_hint(self.path))
             raise
         uniq = os.urandom(6).hex()
         os.write(

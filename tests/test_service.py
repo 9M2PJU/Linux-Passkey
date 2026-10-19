@@ -54,10 +54,7 @@ def daemon(bus, env, monkeypatch):
     thread = threading.Thread(target=d.run, daemon=True)
     thread.start()
     client = connect()
-    for _ in range(100):
-        if name_has_owner(client):
-            break
-        time.sleep(0.05)
+    wait_for_state(client, ("ready",))
     yield d
     GLib.idle_add(d.loop.quit)
     thread.join(timeout=5)
@@ -65,6 +62,17 @@ def daemon(bus, env, monkeypatch):
         if not name_has_owner(client):
             break
         time.sleep(0.05)
+
+
+def wait_for_state(conn, states):
+    for _ in range(200):
+        try:
+            if name_has_owner(conn) and call(conn, "GetStatus")[0]["state"] in states:
+                return
+        except GLib.Error:
+            pass
+        time.sleep(0.05)
+    raise AssertionError("daemon never reached %s" % (states,))
 
 
 def connect():
@@ -189,3 +197,76 @@ def test_settings(daemon):
         call(conn, "SetSetting", GLib.Variant("(sv)", ("approval_timeout", GLib.Variant("x", 1))))
     with pytest.raises(GLib.Error):
         call(conn, "SetSetting", GLib.Variant("(sv)", ("bogus", GLib.Variant("b", True))))
+
+
+def test_unreadable_store_is_reported_and_recoverable(bus, env, monkeypatch):
+    """A store that cannot be decrypted must not crash the daemon: it reports
+    the problem, keeps the file aside on reset and starts working again."""
+    from ubuntu_passkey import paths
+    from ubuntu_passkey.daemon import Daemon
+
+    monkeypatch.delenv("DISPLAY", raising=False)
+    monkeypatch.delenv("WAYLAND_DISPLAY", raising=False)
+    os.makedirs(paths.data_dir(), exist_ok=True)
+    with open(os.path.join(paths.data_dir(), "credentials.enc"), "wb") as f:
+        f.write(b"\x01" + os.urandom(64))  # written under some other key
+
+    d = Daemon(uhid_path="/nonexistent/uhid", key_backend="file")
+    d.config.override("verification", "none")
+    thread = threading.Thread(target=d.run, daemon=True)
+    thread.start()
+    conn = connect()
+    try:
+        wait_for_state(conn, ("error",))
+        status = call(conn, "GetStatus")[0]
+        assert "cannot be decrypted" in status["error"]
+        assert status["device_active"] is False
+        with pytest.raises(GLib.Error) as err:
+            call(conn, "ListCredentials")
+        assert "Unavailable" in err.value.message
+        assert d.process(b"\x04") == bytes([0x30])  # CTAP2_ERR_NOT_ALLOWED
+
+        assert call(conn, "ResetAll")[0] is True
+        wait_for_state(conn, ("ready",))
+        assert call(conn, "ListCredentials")[0] == []
+        kept = [n for n in os.listdir(paths.data_dir()) if ".unreadable-" in n]
+        assert len(kept) == 1
+    finally:
+        GLib.idle_add(d.loop.quit)
+        thread.join(timeout=5)
+        for _ in range(100):
+            if not name_has_owner(conn):
+                break
+            time.sleep(0.05)
+
+
+def test_security_settings_not_writable_over_dbus(daemon):
+    conn = connect()
+    with pytest.raises(GLib.Error) as err:
+        call(conn, "SetSetting", GLib.Variant("(sv)", ("verification", GLib.Variant("s", "none"))))
+    assert "AccessDenied" in err.value.message
+
+
+def test_fallback_prompt_receives_request_on_stdin(daemon, monkeypatch, tmp_path):
+    """Site and account names must not appear on a command line."""
+    import json
+    import sys
+
+    from ubuntu_passkey.ctap2 import Prompt
+
+    script = tmp_path / "prompt.py"
+    record = tmp_path / "seen.json"
+    script.write_text(
+        "import json, sys\n"
+        "json.dump({'argv': sys.argv, 'stdin': json.load(sys.stdin)}, open(%r, 'w'))\n"
+        "print('approve 0')\n" % str(record)
+    )
+    monkeypatch.setenv("WAYLAND_DISPLAY", "wayland-test")
+    monkeypatch.setattr(daemon.broker, "_fallback_command", lambda: [sys.executable, str(script)])
+    choice = daemon.broker.confirm(
+        Prompt("register", "secret-site.example", "", ["alice"]), Request()
+    )
+    seen = json.loads(record.read_text())
+    assert choice == 0
+    assert "secret-site.example" not in " ".join(seen["argv"])
+    assert seen["stdin"]["rp_id"] == "secret-site.example"

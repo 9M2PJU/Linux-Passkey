@@ -3,7 +3,10 @@ set -e
 
 if [ "$1" = "configure" ]; then
     # Load the user-space HID driver now; modules-load.d covers later boots.
-    modprobe uhid 2>/dev/null || true
+    if ! modprobe uhid 2>/dev/null && [ ! -e /dev/uhid ]; then
+        echo "ubuntu-passkey: the running kernel has no uhid module." >&2
+        echo "ubuntu-passkey: install it with: sudo apt install linux-modules-extra-$(uname -r)" >&2
+    fi
     if command -v udevadm >/dev/null 2>&1; then
         udevadm control --reload-rules 2>/dev/null || true
         udevadm trigger --subsystem-match=misc --sysname-match=uhid 2>/dev/null || true

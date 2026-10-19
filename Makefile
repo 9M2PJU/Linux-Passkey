@@ -22,7 +22,9 @@ VERSION = $(shell $(PYTHON) -c 'import ubuntu_passkey; print(ubuntu_passkey.__ve
 
 SUBST = sed -e 's|@bindir@|$(bindir)|g' -e 's|@pkgdatadir@|$(pkgdatadir)|g'
 
-.PHONY: all check lint install install-app install-extension uninstall extension-zip deb clean
+LINGUAS = $(shell cat po/LINGUAS 2>/dev/null)
+
+.PHONY: all check lint pot install install-app install-locale install-extension uninstall extension-zip deb clean
 
 all:
 	@echo "Nothing to build. Try 'make check' or 'sudo make install'."
@@ -33,8 +35,27 @@ check:
 lint:
 	$(PYTHON) -m pyflakes ubuntu_passkey tests
 	for f in $(EXTENSION_DIR)/*.js; do cp $$f /tmp/ubuntu-passkey-check.mjs && node --check /tmp/ubuntu-passkey-check.mjs || exit 1; done
+	cd gnome-extension && npx --yes eslint@9.15.0 $(EXTENSION_UUID)/*.js
+	desktop-file-validate data/io.github.haythmkenway.Passkey.desktop
+	appstreamcli validate --no-net data/io.github.haythmkenway.Passkey.metainfo.xml
+	xmllint --noout --dtdvalid /usr/share/polkit-1/policyconfig-1.dtd data/io.github.haythmkenway.passkey.policy
 
-install: install-app install-extension
+install: install-app install-locale install-extension
+
+# Regenerate the translation template from the Python and JavaScript sources.
+pot:
+	xgettext --from-code=UTF-8 --package-name=ubuntu-passkey --package-version=$(VERSION) \
+		--keyword=_ --keyword=N_ --keyword=ngettext:1,2 --add-comments=Translators \
+		-o po/ubuntu-passkey.pot $$(grep -v '\.js$$' po/POTFILES)
+	xgettext --from-code=UTF-8 --language=JavaScript --join-existing \
+		--keyword=_ --keyword=ngettext:1,2 --add-comments=Translators \
+		-o po/ubuntu-passkey.pot $$(grep '\.js$$' po/POTFILES)
+
+install-locale:
+	for lang in $(LINGUAS); do \
+		install -d $(DESTDIR)$(datadir)/locale/$$lang/LC_MESSAGES; \
+		msgfmt -o $(DESTDIR)$(datadir)/locale/$$lang/LC_MESSAGES/ubuntu-passkey.mo po/$$lang.po || exit 1; \
+	done
 
 install-app:
 	install -d $(DESTDIR)$(pkgdatadir)/ubuntu_passkey/app
@@ -54,6 +75,8 @@ install-app:
 	install -Dm 644 data/io.github.haythmkenway.Passkey.desktop $(DESTDIR)$(datadir)/applications/io.github.haythmkenway.Passkey.desktop
 	install -Dm 644 data/io.github.haythmkenway.Passkey.metainfo.xml $(DESTDIR)$(datadir)/metainfo/io.github.haythmkenway.Passkey.metainfo.xml
 	install -Dm 644 data/icons/hicolor/scalable/apps/io.github.haythmkenway.Passkey.svg $(DESTDIR)$(datadir)/icons/hicolor/scalable/apps/io.github.haythmkenway.Passkey.svg
+	install -Dm 644 data/man/passkeyd.1 $(DESTDIR)$(datadir)/man/man1/passkeyd.1
+	install -Dm 644 data/man/ubuntu-passkey.1 $(DESTDIR)$(datadir)/man/man1/ubuntu-passkey.1
 	install -Dm 644 data/icons/hicolor/symbolic/apps/io.github.haythmkenway.Passkey-symbolic.svg $(DESTDIR)$(datadir)/icons/hicolor/symbolic/apps/io.github.haythmkenway.Passkey-symbolic.svg
 
 install-extension:
@@ -65,6 +88,7 @@ install-extension:
 uninstall:
 	rm -rf $(DESTDIR)$(pkgdatadir) $(DESTDIR)$(datadir)/gnome-shell/extensions/$(EXTENSION_UUID)
 	rm -f $(DESTDIR)$(bindir)/passkeyd $(DESTDIR)$(bindir)/ubuntu-passkey
+	rm -f $(DESTDIR)$(datadir)/man/man1/passkeyd.1 $(DESTDIR)$(datadir)/man/man1/ubuntu-passkey.1
 	rm -f $(DESTDIR)$(libdir_sys)/systemd/user/ubuntu-passkey.service
 	rm -f $(DESTDIR)$(datadir)/dbus-1/services/io.github.haythmkenway.Passkey.Daemon.service
 	rm -f $(DESTDIR)$(libdir_sys)/udev/rules.d/70-ubuntu-passkey.rules
@@ -78,8 +102,13 @@ uninstall:
 extension-zip:
 	mkdir -p dist
 	rm -f dist/$(EXTENSION_UUID).shell-extension.zip
-	cd $(EXTENSION_DIR) && zip -qr ../../dist/$(EXTENSION_UUID).shell-extension.zip \
-		metadata.json extension.js dbus.js dialog.js prompts.js stylesheet.css icons
+	rm -rf build/extension && mkdir -p build/extension
+	cp -r $(EXTENSION_DIR)/* build/extension/
+	for lang in $(LINGUAS); do \
+		install -d build/extension/locale/$$lang/LC_MESSAGES; \
+		msgfmt -o build/extension/locale/$$lang/LC_MESSAGES/ubuntu-passkey.mo po/$$lang.po || exit 1; \
+	done
+	cd build/extension && zip -qr ../../dist/$(EXTENSION_UUID).shell-extension.zip .
 	@echo "Built dist/$(EXTENSION_UUID).shell-extension.zip"
 
 deb:

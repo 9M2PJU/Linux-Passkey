@@ -1,0 +1,49 @@
+.TH PASSKEYD 1 "October 2026" "ubuntu-passkey 0.1.0" "User Commands"
+.SH NAME
+passkeyd \- Ubuntu Passkey FIDO2 authenticator service
+.SH SYNOPSIS
+.B passkeyd
+[\fB\-v\fR] [\fB\-\-uhid\fR \fIPATH\fR] [\fB\-\-key\-backend\fR \fBauto\fR|\fBkeyring\fR|\fBfile\fR] [\fB\-\-usb\-id\fR \fIVID:PID\fR]
+.SH DESCRIPTION
+.B passkeyd
+turns the computer into a FIDO2 (CTAP 2.1) security key. It creates a virtual
+USB HID device through
+.I /dev/uhid
+that web browsers use to create and use passkeys, and offers a D\-Bus service
+(\fIio.github.haythmkenway.Passkey.Daemon\fR on the session bus) used by the
+GNOME Shell extension and the Passkeys application.
+.PP
+It is normally started by the
+.B ubuntu\-passkey.service
+systemd user unit at login and should not be run by hand.
+.SH OPTIONS
+.TP
+.BR \-v ", " \-\-verbose
+Log debugging information.
+.TP
+.BI \-\-uhid " PATH"
+Path of the uhid device (default \fI/dev/uhid\fR).
+.TP
+.BR \-\-key\-backend " " auto | keyring | file
+Where a new master key is stored. The default keeps it in the login keyring
+when one is available. Once created, the recorded location is always used.
+.TP
+.BI \-\-usb\-id " VID:PID"
+USB vendor and product ID (hexadecimal) reported by the virtual key.
+.TP
+.B \-\-version
+Print the version and exit.
+.SH FILES
+.TP
+.I ~/.local/share/ubuntu\-passkey/credentials.enc
+Encrypted passkey metadata.
+.TP
+.I ~/.local/share/ubuntu\-passkey/key\-backend
+Location of the master key.
+.TP
+.I ~/.config/ubuntu\-passkey/config.json
+Settings.
+.SH SEE ALSO
+.BR ubuntu\-passkey (1),
+.BR pkcheck (1),
+.BR systemctl (1)

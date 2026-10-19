@@ -26,6 +26,7 @@
   </developer>
   <screenshots>
     <screenshot type="default">
+      <caption>Manage the passkeys stored on this computer</caption>
       <image>https://raw.githubusercontent.com/HaythmKenway/Ubuntu-Passkey/main/docs/screenshots/app.png</image>
     </screenshot>
   </screenshots>

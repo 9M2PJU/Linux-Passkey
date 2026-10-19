@@ -24,6 +24,7 @@ CMD_GET_INFO = 0x04
 CMD_CLIENT_PIN = 0x06
 CMD_RESET = 0x07
 CMD_GET_NEXT_ASSERTION = 0x08
+CMD_CREDENTIAL_MANAGEMENT = 0x0A
 CMD_SELECTION = 0x0B
 
 # Status codes
@@ -45,6 +46,7 @@ ERR_USER_ACTION_TIMEOUT = 0x2F
 ERR_NOT_ALLOWED = 0x30
 ERR_PIN_AUTH_INVALID = 0x33
 ERR_PIN_NOT_SET = 0x35
+ERR_PUAT_REQUIRED = 0x36
 ERR_INVALID_SUBCOMMAND = 0x3E
 ERR_UV_INVALID = 0x3F
 ERR_UNAUTHORIZED_PERMISSION = 0x40
@@ -74,6 +76,23 @@ PIN_GET_UV_RETRIES = 0x07
 
 PERMISSION_MC = 0x01
 PERMISSION_GA = 0x02
+PERMISSION_CM = 0x04
+
+# authenticatorCredentialManagement subcommands
+CM_GET_METADATA = 0x01
+CM_ENUMERATE_RPS_BEGIN = 0x02
+CM_ENUMERATE_RPS_NEXT = 0x03
+CM_ENUMERATE_CREDS_BEGIN = 0x04
+CM_ENUMERATE_CREDS_NEXT = 0x05
+CM_DELETE_CREDENTIAL = 0x06
+CM_UPDATE_USER = 0x07
+
+# No fixed limit; reported as the remaining discoverable credential capacity.
+RESIDENT_CAPACITY = 10000
+
+# authenticatorReset is only honoured this soon after the device appears
+# (CTAP 2.1 section 6.6); the Passkeys app offers a reset at any time.
+RESET_WINDOW = 10
 
 
 class CtapError(Exception):
@@ -233,8 +252,10 @@ class Authenticator:
         self.config = config
         self.on_reset = on_reset
         self._next = None  # pending getNextAssertion state
+        self._cm_state = None  # pending credential management enumeration
         self._token = None
         self.key_agreement = KeyAgreement()
+        self.powered_up = time.monotonic()
 
     # -- helpers ----------------------------------------------------------
 
@@ -282,8 +303,14 @@ class Authenticator:
             data += cbor.encode(extensions)
         return data
 
-    def _pin_uv_auth(self, params, key, client_data_hash, permission, rp_id, request):
-        """Validate pinUvAuthParam; return (user_verified, user_present)."""
+    def _pin_uv_auth(
+        self, params, key, client_data_hash, permission, rp_id, request, use_presence=True
+    ):
+        """Validate pinUvAuthParam; return (user_verified, user_present).
+
+        The presence collected while issuing the token is spent only by a
+        request that needs it, so silent (up=false) probes leave it intact.
+        """
         if key not in params:
             return False, False
         pin_auth = params[key]
@@ -310,8 +337,9 @@ class Authenticator:
             token.rp_id = rp_id
         elif token.rp_id != rp_id:
             raise CtapError(ERR_PIN_AUTH_INVALID, "token bound to another RP")
-        user_present = token.user_present
-        token.user_present = False
+        user_present = token.user_present and use_presence
+        if use_presence:
+            token.user_present = False
         if permission == PERMISSION_MC:
             token.permissions &= ~PERMISSION_MC
         return True, user_present
@@ -341,11 +369,14 @@ class Authenticator:
                 CMD_RESET: self.reset,
                 CMD_GET_NEXT_ASSERTION: self.get_next_assertion,
                 CMD_SELECTION: self.selection,
+                CMD_CREDENTIAL_MANAGEMENT: self.credential_management,
             }.get(cmd)
             if handler is None:
                 raise CtapError(ERR_INVALID_COMMAND, "unsupported command 0x%02x" % cmd)
             if cmd != CMD_GET_NEXT_ASSERTION:
                 self._next = None
+            if cmd != CMD_CREDENTIAL_MANAGEMENT:
+                self._cm_state = None
             result = handler(params, request)
         except CtapError as e:
             log.info("command 0x%02x failed: %s", cmd, e)
@@ -364,6 +395,7 @@ class Authenticator:
         if self.uv_available:
             options["uv"] = True
             options["pinUvAuthToken"] = True
+            options["credMgmt"] = True
         return {
             1: ["FIDO_2_0", "FIDO_2_1"],
             2: ["credProtect", "hmac-secret"],
@@ -379,6 +411,7 @@ class Authenticator:
                 for alg in self._allowed_algorithms()
             ],
             14: 1,
+            20: max(0, RESIDENT_CAPACITY - len(self.store.list())),
         }
 
     def client_pin(self, params, request):
@@ -406,14 +439,19 @@ class Authenticator:
         rp_id = _optional(params, 10, str)
         if permissions == 0:
             raise CtapError(ERR_INVALID_PARAMETER, "no permissions requested")
-        if permissions & ~(PERMISSION_MC | PERMISSION_GA):
+        if permissions & ~(PERMISSION_MC | PERMISSION_GA | PERMISSION_CM):
             raise CtapError(ERR_UNAUTHORIZED_PERMISSION)
         try:
             shared = self.key_agreement.shared_secret(protocol, peer)
         except ProtocolError as e:
             raise CtapError(ERR_INVALID_PARAMETER, str(e))
         self._token = None
-        operation = "register" if permissions & PERMISSION_MC else "authenticate"
+        if permissions & PERMISSION_MC:
+            operation = "register"
+        elif permissions & PERMISSION_GA:
+            operation = "authenticate"
+        else:
+            operation = "manage"
         prompt = Prompt(operation, rp_id or "", rp_id or "", [], True)
         self._confirm(prompt, request)
         self._verify(prompt, request)
@@ -452,6 +490,9 @@ class Authenticator:
         if alg is None:
             raise CtapError(ERR_UNSUPPORTED_ALGORITHM)
 
+        if 10 in params:
+            # enterpriseAttestation needs the "ep" option, which is not offered.
+            raise CtapError(ERR_INVALID_PARAMETER, "enterprise attestation unsupported")
         exclude = _credential_list(params, 5)
         extensions = _optional(params, 6, dict, {})
         options = _options(params, 7)
@@ -470,6 +511,17 @@ class Authenticator:
             if not token_up:
                 self._confirm(Prompt("select"), request)
             raise CtapError(ERR_OPERATION_DENIED)
+
+        if (
+            rk
+            and self.uv_available
+            and not token_uv
+            and not options.get("uv")
+            and not self.config.get("always_verify")
+        ):
+            # Discoverable credentials always need user verification when the
+            # authenticator is protected by it (CTAP 2.1 section 6.1.2, step 11).
+            raise CtapError(ERR_PUAT_REQUIRED)
 
         rp_id_hash = hashlib.sha256(rp_id.encode()).digest()
         for cid in exclude:
@@ -510,7 +562,8 @@ class Authenticator:
         if rk:
             self.store.add_resident(cred_id, rp, user, alg, cred_protect)
         sig = keys.sign(alg, private_key, auth_data + client_data_hash)
-        log.info("registered %s credential for %s", "discoverable" if rk else "", rp_id)
+        # Site names stay out of the journal unless debugging.
+        log.debug("registered %s credential for %s", "discoverable" if rk else "", rp_id)
         return {1: "packed", 2: auth_data, 3: {"alg": alg, "sig": sig}}
 
     def get_assertion(self, params, request):
@@ -527,7 +580,7 @@ class Authenticator:
             raise CtapError(ERR_UNSUPPORTED_OPTION, "user verification disabled")
         up = options.get("up", True)
         token_uv, token_up = self._pin_uv_auth(
-            params, 6, client_data_hash, PERMISSION_GA, rp_id, request
+            params, 6, client_data_hash, PERMISSION_GA, rp_id, request, use_presence=up
         )
         need_uv = not token_uv and self.uv_available and (
             options.get("uv", False) or (up and self.config.get("always_verify"))
@@ -563,6 +616,7 @@ class Authenticator:
             creds = creds[:1]
 
         chosen = 0
+        user_selected = False
         if up or need_uv:
             accounts = [
                 account_label(c.record["user_name"], c.record["display_name"])
@@ -583,6 +637,7 @@ class Authenticator:
                 )
             if not 0 <= chosen < len(creds):
                 chosen = 0
+            user_selected = up and len(creds) > 1
             if need_uv:
                 self._verify(Prompt("authenticate", rp_id, rp_id, accounts, True), request)
             creds = [creds[chosen]]
@@ -591,6 +646,8 @@ class Authenticator:
         response = self._assertion(
             creds[0], rp_id_hash, client_data_hash, flags, do_uv, hmac_input
         )
+        if user_selected:
+            response[6] = True
         if len(creds) > 1:
             # Silent discoverable lookup: the platform iterates with getNextAssertion.
             response[5] = len(creds)
@@ -649,6 +706,8 @@ class Authenticator:
         return None
 
     def reset(self, params, request):
+        if time.monotonic() - self.powered_up > RESET_WINDOW:
+            raise CtapError(ERR_NOT_ALLOWED, "reset is only allowed right after power-up")
         prompt = Prompt("reset", verify=self.uv_available)
         self._confirm(prompt, request)
         if self.uv_available:
@@ -660,6 +719,135 @@ class Authenticator:
         self.key_agreement.regenerate()
         log.warning("authenticator reset: all credentials deleted")
         return None
+
+    # -- authenticatorCredentialManagement -------------------------------
+
+    def credential_management(self, params, request):
+        sub = _require(params, 1, int)
+        if sub == CM_ENUMERATE_RPS_NEXT:
+            return self._cm_next("rps")
+        if sub == CM_ENUMERATE_CREDS_NEXT:
+            return self._cm_next("creds")
+        self._cm_state = None
+        sub_params = _optional(params, 2, dict)
+        token = self._cm_token(params, sub, sub_params)
+
+        if sub == CM_GET_METADATA:
+            if token.rp_id is not None:
+                raise CtapError(ERR_PIN_AUTH_INVALID, "token bound to an RP")
+            count = len(self.store.list())
+            return {1: count, 2: max(0, RESIDENT_CAPACITY - count)}
+
+        if sub == CM_ENUMERATE_RPS_BEGIN:
+            if token.rp_id is not None:
+                raise CtapError(ERR_PIN_AUTH_INVALID, "token bound to an RP")
+            rps = {}
+            for rec in sorted(self.store.list(), key=lambda r: r["rp_id"]):
+                rps.setdefault(rec["rp_id"], rec.get("rp_name") or "")
+            if not rps:
+                raise CtapError(ERR_NO_CREDENTIALS)
+            items = []
+            for rp_id, name in rps.items():
+                entity = {"id": rp_id}
+                if name and name != rp_id:
+                    entity["name"] = name
+                items.append({3: entity, 4: hashlib.sha256(rp_id.encode()).digest()})
+            first = dict(items[0])
+            first[5] = len(items)
+            self._cm_state = ("rps", items[1:])
+            return first
+
+        if sub == CM_ENUMERATE_CREDS_BEGIN:
+            rp_id_hash = _require(sub_params or {}, 1, bytes)
+            self._cm_check_rp(token, rp_id_hash)
+            items = [
+                self._cm_credential(rec, rp_id_hash)
+                for rec in self._records_for_hash(rp_id_hash)
+            ]
+            items = [i for i in items if i is not None]
+            if not items:
+                raise CtapError(ERR_NO_CREDENTIALS)
+            first = dict(items[0])
+            first[9] = len(items)
+            self._cm_state = ("creds", items[1:])
+            return first
+
+        if sub in (CM_DELETE_CREDENTIAL, CM_UPDATE_USER):
+            desc = _require(sub_params or {}, 2, dict)
+            cred_id = desc.get("id")
+            if not isinstance(cred_id, bytes):
+                raise CtapError(ERR_CBOR_UNEXPECTED_TYPE, "bad credential descriptor")
+            rec = self.store.record(b64e(cred_id))
+            if rec is None:
+                raise CtapError(ERR_NO_CREDENTIALS)
+            self._cm_check_rp(token, hashlib.sha256(rec["rp_id"].encode()).digest())
+            if sub == CM_DELETE_CREDENTIAL:
+                self.store.delete(rec["id"])
+                return None
+            user = _require(sub_params, 3, dict)
+            if user.get("id") != b64d(rec["user_id"]):
+                raise CtapError(ERR_INVALID_PARAMETER, "user.id does not match")
+            for field in ("name", "displayName"):
+                if not isinstance(user.get(field, ""), str):
+                    raise CtapError(ERR_CBOR_UNEXPECTED_TYPE, "bad user entity")
+            self.store.update_user(
+                rec["id"], user.get("name", ""), user.get("displayName", "")
+            )
+            return None
+
+        raise CtapError(ERR_INVALID_SUBCOMMAND)
+
+    def _cm_token(self, params, sub, sub_params):
+        if 4 not in params:
+            raise CtapError(ERR_PUAT_REQUIRED)
+        pin_auth = _require(params, 4, bytes)
+        protocol = PROTOCOLS.get(_require(params, 3, int))
+        if protocol is None:
+            raise CtapError(ERR_INVALID_PARAMETER, "unsupported PIN/UV protocol")
+        token = self._token
+        if token is None or not token.valid or token.protocol is not protocol:
+            raise CtapError(ERR_PIN_AUTH_INVALID, "no valid pinUvAuthToken")
+        message = bytes([sub]) + (cbor.encode(sub_params) if sub_params is not None else b"")
+        if not protocol.verify(token.value, message, pin_auth):
+            raise CtapError(ERR_PIN_AUTH_INVALID, "pinUvAuthParam mismatch")
+        if not token.permissions & PERMISSION_CM:
+            raise CtapError(ERR_PIN_AUTH_INVALID, "token lacks permission")
+        return token
+
+    def _cm_check_rp(self, token, rp_id_hash):
+        if token.rp_id is not None:
+            if hashlib.sha256(token.rp_id.encode()).digest() != rp_id_hash:
+                raise CtapError(ERR_PIN_AUTH_INVALID, "token bound to another RP")
+
+    def _cm_next(self, kind):
+        state = self._cm_state
+        if not state or state[0] != kind or not state[1]:
+            self._cm_state = None
+            raise CtapError(ERR_NOT_ALLOWED)
+        return state[1].pop(0)
+
+    def _records_for_hash(self, rp_id_hash):
+        return [
+            rec
+            for rec in sorted(self.store.list(), key=lambda r: r["created"])
+            if hashlib.sha256(rec["rp_id"].encode()).digest() == rp_id_hash
+        ]
+
+    def _cm_credential(self, rec, rp_id_hash):
+        cred = self.store.lookup(rp_id_hash, b64d(rec["id"]))
+        if cred is None:
+            return None
+        user = {"id": b64d(rec["user_id"])}
+        if rec.get("user_name"):
+            user["name"] = rec["user_name"]
+        if rec.get("display_name"):
+            user["displayName"] = rec["display_name"]
+        return {
+            6: user,
+            7: {"type": "public-key", "id": cred.id},
+            8: keys.cose_public_key(cred.alg, cred.private_key),
+            10: cred.cred_protect,
+        }
 
 
 def describe_record(rec):

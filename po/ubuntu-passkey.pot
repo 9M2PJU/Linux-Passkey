@@ -1,0 +1,508 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-19 06:41+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: ubuntu_passkey/prompts.py:10
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:17
+msgid "Create a Passkey?"
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:11
+#, python-brace-format
+msgid "{rp} wants to create a passkey for {account}."
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:12
+#, python-brace-format
+msgid "{rp} wants to create a passkey."
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:13
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:21
+msgid "Create"
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:16
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:26
+msgid "Sign In With a Passkey?"
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:17
+#, python-brace-format
+msgid "{rp} wants to sign you in with a passkey."
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:19 ubuntu_passkey/prompts.py:25
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:28
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:34
+msgid "Sign In"
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:22
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:32
+msgid "Choose an Account"
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:23
+#, python-brace-format
+msgid "Choose the account to sign in to {rp} with."
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:28
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:38
+msgid "Passkey Already Exists"
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:29
+#, python-brace-format
+msgid "You already have a passkey for {rp} on this device."
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:31
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:40
+msgid "OK"
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:34
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:44
+msgid "Manage Passkeys?"
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:35
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:45
+msgid "A browser wants to view and manage the passkeys on this device."
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:37
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:46
+msgid "Allow"
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:40
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:56
+msgid "Use Ubuntu Passkey?"
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:41
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:57
+msgid "A website wants to use the passkeys on this device."
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:43
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:58
+msgid "Use"
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:46 ubuntu_passkey/app/window.py:350
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:50
+msgid "Delete All Passkeys?"
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:48
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:51
+msgid ""
+"A website or app asked to reset Ubuntu Passkey. Every passkey will be "
+"permanently deleted."
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:52 ubuntu_passkey/app/window.py:355
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:52
+msgid "Delete All"
+msgstr ""
+
+#: ubuntu_passkey/prompts.py:60
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:12
+msgid "A website"
+msgstr ""
+
+#: ubuntu_passkey/app/main.py:40
+msgid "Ubuntu Passkey contributors"
+msgstr ""
+
+#: ubuntu_passkey/app/main.py:45
+msgid "Passkeys for Ubuntu: a FIDO2 authenticator built into your desktop."
+msgstr ""
+
+#: ubuntu_passkey/app/prompt.py:21
+#: gnome-extension/passkey@haythmkenway.github.io/extension.js:19
+#: gnome-extension/passkey@haythmkenway.github.io/extension.js:217
+msgid "Ubuntu Passkey"
+msgstr ""
+
+#: ubuntu_passkey/app/prompt.py:53
+msgid "Account"
+msgstr ""
+
+#: ubuntu_passkey/app/prompt.py:63 ubuntu_passkey/app/window.py:273
+#: gnome-extension/passkey@haythmkenway.github.io/dialog.js:92
+msgid "Unnamed account"
+msgstr ""
+
+#: ubuntu_passkey/app/prompt.py:75
+#: gnome-extension/passkey@haythmkenway.github.io/dialog.js:49
+msgid "You will be asked to confirm your identity next."
+msgstr ""
+
+#: ubuntu_passkey/app/prompt.py:83 ubuntu_passkey/app/window.py:329
+#: ubuntu_passkey/app/window.py:354
+#: gnome-extension/passkey@haythmkenway.github.io/dialog.js:54
+msgid "Cancel"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:16
+msgid "Never"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:20
+#, python-format
+msgid "%d day ago"
+msgid_plural "%d days ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: ubuntu_passkey/app/window.py:23
+#, python-format
+msgid "%d hour ago"
+msgid_plural "%d hours ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: ubuntu_passkey/app/window.py:26
+#, python-format
+msgid "%d minute ago"
+msgid_plural "%d minutes ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: ubuntu_passkey/app/window.py:27
+msgid "Just now"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:48
+msgid "Delete All Passkeys…"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:51
+msgid "About Passkeys"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:54
+msgid "Main Menu"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:59
+msgid "Search Passkeys"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:62
+msgid "Search passkeys"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:81
+msgid ""
+"Passkeys stored on this computer. Websites see this computer as a security "
+"key."
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:107
+#, python-format
+msgid "Cannot connect to the session bus: %s"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:119
+msgid "Security"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:121
+#: gnome-extension/passkey@haythmkenway.github.io/extension.js:35
+msgid "Always Verify Identity"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:122
+msgid ""
+"Ask for your password or fingerprint every time a passkey is used, even if "
+"the website does not require it"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:130
+msgid "Approval Timeout"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:131
+msgid "Seconds to wait for you to answer a prompt"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:140
+msgid "Status"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:141
+msgid "Passkey Service"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:142
+msgid "Virtual Security Key"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:143
+msgid "Identity Verification"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:144
+msgid "Encryption Key Storage"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:145
+msgid "Approval Prompts"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:184
+#, python-format
+msgid "Could not load passkeys: %s"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:188
+#, python-format
+msgid "Your passkeys cannot be opened: %s"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:189
+msgid "Try Again"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:193
+msgid "Opening your passkeys…"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:196
+#, python-format
+msgid "The virtual security key is unavailable: %s"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:197
+msgid "Help"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:203
+#, python-format
+msgid "Running (version %s)"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:205
+msgid "In use by a browser"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:205
+msgid "Ready"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:207
+msgid "Unavailable"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:210
+msgid "System authentication (password or fingerprint)"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:212
+msgid "Disabled"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:215
+msgid "Login keyring"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:215
+msgid "Protected file"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:216
+msgid "Not created yet"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:221
+msgid "GNOME Shell extension"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:221
+msgid "Stand-alone window (extension not active)"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:237
+msgid "The passkey service is not running"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:237
+msgid "Start"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:238
+msgid "Stopped"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:260
+msgid "No passkeys yet"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:261
+msgid ""
+"When a website offers to create a passkey, choose “security key” and approve "
+"the prompt. It will appear here."
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:268
+msgid "No passkeys match your search"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:282
+msgid "Website"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:283
+msgid "Created"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:284
+msgid "Last used"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:285
+msgid "Times used"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:286
+msgid "Algorithm"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:296
+#, python-brace-format
+msgid "Delete Passkey for {site}"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:297
+msgid "Delete Passkey"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:324
+msgid "Delete Passkey?"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:325
+#, python-format
+msgid ""
+"You will no longer be able to sign in to %s as %s with this passkey. Make "
+"sure you have another way to sign in."
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:330
+msgid "Delete"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:340
+msgid "Passkey deleted"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:342
+#, python-format
+msgid "Could not delete: %s"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:351
+msgid ""
+"Every passkey on this computer will be permanently deleted and the "
+"encryption key replaced. You will be asked to confirm your identity."
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:362
+#, python-format
+msgid "Reset failed: %s"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:364
+msgid "All passkeys deleted"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:366
+msgid "Reset cancelled"
+msgstr ""
+
+#: ubuntu_passkey/app/window.py:390
+#, python-format
+msgid "Could not save setting: %s"
+msgstr ""
+
+#: gnome-extension/passkey@haythmkenway.github.io/extension.js:40
+msgid "Manage Passkeys"
+msgstr ""
+
+#: gnome-extension/passkey@haythmkenway.github.io/extension.js:47
+msgid "Passkey service not running"
+msgstr ""
+
+#: gnome-extension/passkey@haythmkenway.github.io/extension.js:53
+msgid "Passkeys cannot be opened"
+msgstr ""
+
+#: gnome-extension/passkey@haythmkenway.github.io/extension.js:55
+msgid "Opening passkeys…"
+msgstr ""
+
+#: gnome-extension/passkey@haythmkenway.github.io/extension.js:57
+msgid "Passkeys ready"
+msgstr ""
+
+#: gnome-extension/passkey@haythmkenway.github.io/extension.js:59
+msgid "Security key unavailable"
+msgstr ""
+
+#: gnome-extension/passkey@haythmkenway.github.io/extension.js:61
+#, javascript-format
+msgid "%d passkey"
+msgid_plural "%d passkeys"
+msgstr[0] ""
+msgstr[1] ""
+
+#: gnome-extension/passkey@haythmkenway.github.io/extension.js:217
+msgid "The Passkeys app is not installed."
+msgstr ""
+
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:19
+#, javascript-format
+msgid "%s wants to create a passkey for %s."
+msgstr ""
+
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:20
+#, javascript-format
+msgid "%s wants to create a passkey."
+msgstr ""
+
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:27
+#, javascript-format
+msgid "%s wants to sign you in with a passkey."
+msgstr ""
+
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:33
+#, javascript-format
+msgid "Choose the account to sign in to %s with."
+msgstr ""
+
+#: gnome-extension/passkey@haythmkenway.github.io/prompts.js:39
+#, javascript-format
+msgid "You already have a passkey for %s on this device."
+msgstr ""

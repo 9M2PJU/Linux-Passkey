@@ -9,6 +9,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
 from .. import APP_ID, __version__  # noqa: E402
+from ..i18n import _  # noqa: E402
 
 
 class PasskeyApplication(Adw.Application):
@@ -36,22 +37,23 @@ class PasskeyApplication(Adw.Application):
         about = Adw.AboutDialog(
             application_name="Passkeys",
             application_icon=APP_ID,
-            developer_name="Ubuntu Passkey contributors",
+            developer_name=_("Ubuntu Passkey contributors"),
             version=__version__,
             website="https://github.com/HaythmKenway/Ubuntu-Passkey",
             issue_url="https://github.com/HaythmKenway/Ubuntu-Passkey/issues",
             license_type=Gtk.License.GPL_3_0,
-            comments="Passkeys for Ubuntu: a FIDO2 authenticator built into your desktop.",
+            comments=_("Passkeys for Ubuntu: a FIDO2 authenticator built into your desktop."),
         )
         about.present(self.props.active_window)
 
 
 def main(argv=None):
     argv = list(sys.argv if argv is None else argv)
-    if len(argv) >= 3 and argv[1] == "--prompt":
+    if len(argv) >= 2 and argv[1] == "--prompt":
         from .prompt import run_prompt
 
-        return run_prompt(argv[2])
+        # The daemon passes the request on stdin to keep it out of /proc.
+        return run_prompt(sys.stdin.read())
     if len(argv) >= 2 and argv[1] == "--version":
         print(__version__)
         return 0
