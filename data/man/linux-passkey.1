@@ -1,0 +1,18 @@
+.TH LINUX-PASSKEY 1 "October 2026" "linux-passkey 0.1.0" "User Commands"
+.SH NAME
+linux\-passkey \- manage the passkeys stored by Linux Passkey
+.SH SYNOPSIS
+.B linux\-passkey
+[\fB\-\-version\fR]
+.SH DESCRIPTION
+.B linux\-passkey
+opens Passkeys, a graphical application to list, inspect and delete the
+passkeys stored on this computer, view the status of the
+.BR passkeyd (1)
+service, and change its settings.
+.PP
+The service also runs this program with an internal
+.B \-\-prompt
+option to ask for approval when the GNOME Shell extension is not active.
+.SH SEE ALSO
+.BR passkeyd (1)

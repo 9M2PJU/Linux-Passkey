@@ -1,0 +1,3 @@
+# The udev rule grants access to /dev/uhid (a virtual device), not to
+# hardware that could be matched by a modalias.
+linux-passkey: appstream-metadata-missing-modalias-provide *

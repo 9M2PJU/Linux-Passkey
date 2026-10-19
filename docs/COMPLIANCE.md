@@ -1,6 +1,6 @@
 # Standards compliance
 
-This document records which standards Ubuntu Passkey follows, how each was checked, and where it falls short. Results come from release 0.1.0's test suite and validators, and from end-to-end runs on real Ubuntu kernels and GNOME Shell (see [Evidence](#evidence)).
+This document records which standards Linux Passkey follows, how each was checked, and where it falls short. Results come from release 0.1.0's test suite and validators, and from end-to-end runs on real Ubuntu kernels and GNOME Shell (see [Evidence](#evidence)).
 
 Status key: **Pass** means checked with the named tool or test. **Partial** means the required parts are met but some optional parts are not implemented. **No** means not met. **N/A** means it does not apply.
 
@@ -23,7 +23,7 @@ Status key: **Pass** means checked with the named tool or test. **Partial** mean
 | Debian Policy | Pass | `lintian --pedantic --info`: clean, one justified override |
 | GNOME Shell extension review guidelines | Pass (self-review) | Checklist below; ESLint clean; tested on GNOME Shell 46 |
 | GNOME accessibility | Pass for the items listed | Accessible names on icon-only buttons; keyboard operation of prompts |
-| Internationalisation (gettext) | Pass (no translations shipped yet) | `po/ubuntu-passkey.pot` with 110 messages, plural forms included |
+| Internationalisation (gettext) | Pass (no translations shipped yet) | `po/linux-passkey.pot` with 110 messages, plural forms included |
 
 ## FIDO CTAP 2.1 authenticator
 
@@ -82,7 +82,7 @@ These are not implemented: client PIN, `alwaysUv`, `largeBlobs` and the `largeBl
 
 ## Certification
 
-Ubuntu Passkey is **not FIDO Certified**, and the "FIDO Certified" mark must not be used for it. The steps to certify are:
+Linux Passkey is **not FIDO Certified**, and the "FIDO Certified" mark must not be used for it. The steps to certify are:
 
 1. **Functional certification.** Pass the FIDO Conformance Tools for CTAP 2.1 authenticators at a FIDO interoperability event or by self-validation, then apply.
 2. **Authenticator security certification at Level 1.** This needs a vendor questionnaire and lab review. A software authenticator can reach L1 at most; L2 and above need a restricted operating environment.
@@ -126,7 +126,7 @@ The rule gives the seat user access to `/dev/uhid` (`TAG+="uaccess"`) and passes
 
 ### Debian packaging
 
-`lintian --pedantic --info` reports nothing for either package. One override is justified in `debian/ubuntu-passkey.lintian-overrides`: the udev rule is for a virtual device, so it has no modalias. Man pages ship for both commands. The systemd user unit is enabled for all users by `dh_installsystemduser`.
+`lintian --pedantic --info` reports nothing for either package. One override is justified in `debian/linux-passkey.lintian-overrides`: the udev rule is for a virtual device, so it has no modalias. Man pages ship for both commands. The systemd user unit is enabled for all users by `dh_installsystemduser`.
 
 ## GNOME
 

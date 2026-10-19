@@ -1,0 +1,4 @@
+# Linux Passkey: let the user logged in at the local seat create the virtual
+# FIDO security key through /dev/uhid. The resulting /dev/hidraw node is made
+# accessible to that user by systemd's 60-fido-id.rules (FIDO usage page).
+KERNEL=="uhid", SUBSYSTEM=="misc", TAG+="uaccess"

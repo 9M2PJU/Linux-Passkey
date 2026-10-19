@@ -1,4 +1,4 @@
 [D-BUS Service]
 Name=io.github.haythmkenway.Passkey.Daemon
 Exec=@bindir@/passkeyd
-SystemdService=ubuntu-passkey.service
+SystemdService=linux-passkey.service

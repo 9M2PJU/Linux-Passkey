@@ -1,0 +1,21 @@
+#!/bin/sh
+# Runs before every app in the snap (command-chain), then execs it.
+
+# The service at sign-in, offered once, as the .deb enables its user unit on
+# install. snapd starts ~/snap/<snap>/current/.config/autostart entries that
+# an app names in `autostart:`; the marker sits in the unversioned folder so
+# that removing the entry turns it off for good, refreshes included.
+marker="$SNAP_USER_COMMON/daemon-autostart-offered"
+if [ ! -e "$marker" ]; then
+    mkdir -p "$HOME/.config/autostart" "$SNAP_USER_COMMON"
+    cp "$SNAP/share/linux-passkey/linux-passkey-daemon.desktop" "$HOME/.config/autostart/" 2>/dev/null
+    : > "$marker"
+    # On that first run start the service too, so nothing waits for the
+    # next sign-in.
+    case "$1" in
+        */passkeyd) ;;
+        *) "$SNAP/usr/bin/passkeyd" >/dev/null 2>&1 </dev/null & ;;
+    esac
+fi
+
+exec "$@"

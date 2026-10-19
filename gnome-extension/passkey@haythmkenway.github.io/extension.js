@@ -16,7 +16,7 @@ const APP_DESKTOP_ID = 'io.github.haythmkenway.Passkey.desktop';
 const PasskeyIndicator = GObject.registerClass(
 class PasskeyIndicator extends PanelMenu.Button {
     _init(extension) {
-        super._init(0.0, _('Ubuntu Passkey'));
+        super._init(0.0, _('Linux Passkey'));
         this._extension = extension;
 
         this._icon = new St.Icon({
@@ -96,7 +96,7 @@ export default class PasskeyExtension extends Extension {
             try {
                 this._proxy.UnregisterAgentRemote(() => {});
             } catch (e) {
-                console.error('Ubuntu Passkey: failed to unregister', e);
+                console.error('Linux Passkey: failed to unregister', e);
             }
         }
         this._disconnectProxy();
@@ -110,7 +110,7 @@ export default class PasskeyExtension extends Extension {
             return;
         new PasskeyProxy(Gio.DBus.session, BUS_NAME, OBJECT_PATH, (proxy, error) => {
             if (error) {
-                console.error('Ubuntu Passkey: cannot connect to the daemon', error);
+                console.error('Linux Passkey: cannot connect to the daemon', error);
                 return;
             }
             if (!this._indicator) // disabled meanwhile
@@ -127,7 +127,7 @@ export default class PasskeyExtension extends Extension {
             ];
             proxy.RegisterAgentRemote((result, err) => {
                 if (err) {
-                    console.error('Ubuntu Passkey: RegisterAgent failed', err);
+                    console.error('Linux Passkey: RegisterAgent failed', err);
                     return;
                 }
                 proxy.GetPendingRequestsRemote((reply, err2) => {
@@ -182,7 +182,7 @@ export default class PasskeyExtension extends Extension {
         const dialog = new ApprovalDialog(request, (approved, choice) => {
             this._proxy?.RespondRemote(request.id, approved, choice, (r, error) => {
                 if (error)
-                    console.error('Ubuntu Passkey: Respond failed', error);
+                    console.error('Linux Passkey: Respond failed', error);
             });
         });
         dialog.connect('destroy', () => {
@@ -205,7 +205,7 @@ export default class PasskeyExtension extends Extension {
     setAlwaysVerify(state) {
         this._proxy?.SetSettingRemote('always_verify', new GLib.Variant('b', state), (r, error) => {
             if (error)
-                console.error('Ubuntu Passkey: SetSetting failed', error);
+                console.error('Linux Passkey: SetSetting failed', error);
         });
     }
 
@@ -214,6 +214,6 @@ export default class PasskeyExtension extends Extension {
         if (app)
             app.launch([], global.create_app_launch_context(0, -1));
         else
-            Main.notify(_('Ubuntu Passkey'), _('The Passkeys app is not installed.'));
+            Main.notify(_('Linux Passkey'), _('The Passkeys app is not installed.'));
     }
 }

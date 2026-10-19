@@ -1,0 +1,180 @@
+# The Snap Store package of Linux Passkey. snapcraft and the Store's build
+# from GitHub look for snap/snapcraft.yaml at the project's root.
+#
+# Strict confinement. Websites reach the authenticator through the Linux
+# Passkey browser extension, as a built-in (platform) authenticator; what
+# confinement costs:
+#   - No virtual USB security key. /dev/uhid is root-only, and the uhid
+#     interface cannot hand it to a daemon running as the user, so browsers
+#     without the extension cannot see the authenticator. The .deb has it.
+#   - The daemon must own its session-bus name, which the GNOME Shell
+#     extension and the browser extension's host call: that is the
+#     `passkey-daemon` dbus slot. The Store reviews a snap that declares one.
+#   - Identity verification asks polkit about the daemon (`polkit`, with the
+#     snap's policy in meta/polkit), and the master key lives in the login
+#     keyring (`password-manager-service`). Neither is auto-connected until
+#     the Store grants it; without the keyring the key is kept in a file, and
+#     without polkit verification is unavailable, which websites see as an
+#     authenticator that cannot verify.
+#   - The browsers find the extension's native messaging host through a
+#     manifest the daemon writes into each browser's folder in the real home
+#     (`browser-hosts`, personal-files).
+# Until the Store grants them, connect by hand:
+#   sudo snap connect linux-passkey:polkit
+#   sudo snap connect linux-passkey:password-manager-service
+#   sudo snap connect linux-passkey:browser-hosts
+#
+# The daemon is started at sign-in through snapd's autostart, not as a user
+# daemon: `daemon-scope: user` is still behind experimental.user-daemons.
+name: linux-passkey
+title: Linux Passkey
+summary: Passkeys for Linux, confirmed with your password or fingerprint
+description: |
+  Linux Passkey stores passkeys on your computer and confirms each use with your Linux password or fingerprint, the way Windows Hello does on Windows. Create and sign in with passkeys on GitHub, Google and every other site that supports them, without a phone or a hardware key.
+
+  - Works in Chrome, Chromium, Brave, Edge, Vivaldi, Firefox and other browsers built on them, through the Linux Passkey browser extension.
+  - Sites see a built-in authenticator, so they offer passkeys instead of warning that the browser supports them only partly.
+  - Keys are encrypted with a key kept in your login keyring and never leave the computer.
+  - The Passkeys app lists, searches and deletes your passkeys.
+  - With GNOME, the Linux Passkey Shell extension shows approval prompts as system dialogs.
+
+  After installing, add the browser extension to your browser, and connect the permissions the Store does not connect by itself yet:
+    sudo snap connect linux-passkey:polkit
+    sudo snap connect linux-passkey:password-manager-service
+    sudo snap connect linux-passkey:browser-hosts
+
+  The snap does not include the virtual USB security key for browsers without the extension; the .deb from the project's releases does.
+website: https://github.com/HaythmKenway/Linux-Passkey
+source-code: https://github.com/HaythmKenway/Linux-Passkey
+issues: https://github.com/HaythmKenway/Linux-Passkey/issues
+donation:
+  - https://paypal.me/0x4kil
+  - https://github.com/HaythmKenway/Linux-Passkey#support-the-project
+license: GPL-3.0-or-later
+icon: data/icons/hicolor/scalable/apps/io.github.haythmkenway.Passkey.svg
+base: core24
+confinement: strict
+grade: stable
+adopt-info: linux-passkey
+
+platforms:
+  amd64:
+  arm64:
+
+environment:
+  PYTHONPATH: $SNAP/usr/share/linux-passkey:$SNAP/usr/lib/python3/dist-packages
+  # The browser extension's host, as browsers outside the snap run it.
+  PASSKEY_NATIVE_HOST: /snap/bin/linux-passkey.native-host
+
+slots:
+  passkey-daemon:
+    interface: dbus
+    bus: session
+    name: io.github.haythmkenway.Passkey.Daemon
+
+plugs:
+  passkey-client:
+    interface: dbus
+    bus: session
+    name: io.github.haythmkenway.Passkey.Daemon
+  polkit:
+    interface: polkit
+    action-prefix: io.github.haythmkenway.passkey
+  browser-hosts:
+    interface: personal-files
+    write:
+      - $HOME/.config/google-chrome/NativeMessagingHosts
+      - $HOME/.config/google-chrome-beta/NativeMessagingHosts
+      - $HOME/.config/google-chrome-unstable/NativeMessagingHosts
+      - $HOME/.config/chromium/NativeMessagingHosts
+      - $HOME/.config/BraveSoftware/Brave-Browser/NativeMessagingHosts
+      - $HOME/.config/BraveSoftware/Brave-Browser-Beta/NativeMessagingHosts
+      - $HOME/.config/BraveSoftware/Brave-Browser-Nightly/NativeMessagingHosts
+      - $HOME/.config/microsoft-edge/NativeMessagingHosts
+      - $HOME/.config/microsoft-edge-beta/NativeMessagingHosts
+      - $HOME/.config/microsoft-edge-dev/NativeMessagingHosts
+      - $HOME/.config/vivaldi/NativeMessagingHosts
+      - $HOME/.config/vivaldi-snapshot/NativeMessagingHosts
+      - $HOME/.mozilla/native-messaging-hosts
+      - $HOME/.librewolf/native-messaging-hosts
+      - $HOME/.floorp/native-messaging-hosts
+      - $HOME/.waterfox/native-messaging-hosts
+      - $HOME/.zen/native-messaging-hosts
+
+apps:
+  daemon:
+    command: usr/bin/passkeyd
+    command-chain: [bin/launch]
+    autostart: linux-passkey-daemon.desktop
+    extensions: [gnome]
+    slots: [passkey-daemon]
+    plugs:
+      - polkit
+      - password-manager-service
+      - browser-hosts
+  linux-passkey:
+    command: usr/bin/linux-passkey
+    command-chain: [bin/launch]
+    desktop: usr/share/applications/io.github.haythmkenway.Passkey.desktop
+    common-id: io.github.haythmkenway.Passkey
+    extensions: [gnome]
+    plugs: [passkey-client]
+  native-host:
+    command: usr/libexec/linux-passkey/native-host
+    extensions: [gnome]
+    plugs: [passkey-client]
+
+parts:
+  linux-passkey:
+    plugin: nil
+    source: .
+    build-packages:
+      - python3
+    override-pull: |
+      craftctl default
+      craftctl set version="$(python3 -c 'import linux_passkey; print(linux_passkey.__version__)')"
+    override-build: |
+      make install-app DESTDIR="$CRAFT_PART_INSTALL" PREFIX=/usr
+      # Python comes from the snap, not from the base: find it on PATH.
+      sed -i '1s|^#!/usr/bin/python3$|#!/usr/bin/env python3|' \
+        "$CRAFT_PART_INSTALL/usr/bin/passkeyd" \
+        "$CRAFT_PART_INSTALL/usr/bin/linux-passkey" \
+        "$CRAFT_PART_INSTALL/usr/libexec/linux-passkey/native-host"
+      # The window's entry, with the icon by path: a snap cannot add to the
+      # host's icon theme.
+      sed -i 's|^Icon=.*|Icon=${SNAP}/usr/share/icons/hicolor/scalable/apps/io.github.haythmkenway.Passkey.svg|' \
+        "$CRAFT_PART_INSTALL/usr/share/applications/io.github.haythmkenway.Passkey.desktop"
+    stage-packages:
+      - python3
+      - python3-gi
+      - python3-cryptography
+      - publicsuffix
+      # pkcheck, for identity verification through polkit.
+      - polkitd
+    prime:
+      # Packaging for the host system, which a snap cannot install.
+      - -usr/lib/systemd
+      - -usr/lib/udev
+      - -usr/lib/modules-load.d
+      - -usr/share/dbus-1
+      - -usr/share/polkit-1
+      - -usr/share/doc
+      - -usr/share/man
+      - -usr/share/lintian
+      - -lib/systemd
+      - -usr/lib/polkit-1/polkitd
+    override-prime: |
+      craftctl default
+      # snapd installs the policy that the polkit plug's action-prefix names.
+      install -D -m 0644 "$CRAFT_PROJECT_DIR/data/io.github.haythmkenway.passkey.policy" \
+        meta/polkit/polkit.io.github.haythmkenway.passkey.policy
+
+  launcher:
+    plugin: dump
+    source: snap/local
+    organize:
+      launch: bin/launch
+      linux-passkey-daemon.desktop: share/linux-passkey/linux-passkey-daemon.desktop
+    stage:
+      - bin/launch
+      - share/linux-passkey/linux-passkey-daemon.desktop

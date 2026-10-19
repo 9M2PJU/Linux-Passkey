@@ -1,13 +1,13 @@
-Source: ubuntu-passkey
+Source: linux-passkey
 Section: utils
 Priority: optional
-Maintainer: Ubuntu Passkey contributors <noreply@github.com>
+Maintainer: Linux Passkey contributors <noreply@github.com>
 Build-Depends: debhelper-compat (= 13), dh-python, python3:any
 Standards-Version: 4.6.2
-Homepage: https://github.com/HaythmKenway/Ubuntu-Passkey
+Homepage: https://github.com/HaythmKenway/Linux-Passkey
 Rules-Requires-Root: no
 
-Package: ubuntu-passkey
+Package: linux-passkey
 Architecture: all
 Depends: ${misc:Depends},
          ${python3:Depends},
@@ -18,22 +18,29 @@ Depends: ${misc:Depends},
          gir1.2-gtk-4.0,
          gir1.2-adw-1 (>= 1.5),
          gir1.2-secret-1,
+         publicsuffix,
          polkitd | policykit-1,
          systemd,
          udev
-Recommends: gnome-shell-extension-ubuntu-passkey, gnome-keyring
-Description: passkeys for Ubuntu (FIDO2 / WebAuthn authenticator)
- Ubuntu Passkey turns the computer into a FIDO2 security key, so passkeys can
- be created and used on websites in any browser without extra hardware.
+Recommends: gnome-shell-extension-linux-passkey, gnome-keyring
+Breaks: ubuntu-passkey
+Replaces: ubuntu-passkey
+Description: passkeys for Linux (FIDO2 / WebAuthn authenticator)
+ Linux Passkey lets the computer store passkeys and confirm them with the
+ user's password or fingerprint, the way Windows Hello does, so they can be
+ created and used on websites without extra hardware.
  .
- It provides a per-user daemon that exposes a virtual USB security key through
- /dev/uhid, stores credentials encrypted with a key kept in the login keyring,
- verifies the user with their password or fingerprint through polkit, and the
- Passkeys application to manage stored passkeys.
+ It provides a per-user daemon that browsers reach through the Linux Passkey
+ browser extension (as a built-in authenticator) or as a virtual USB security
+ key through /dev/uhid. Credentials are encrypted with a key kept in the login
+ keyring, the user is verified through polkit, and the Passkeys application
+ manages stored passkeys.
 
-Package: gnome-shell-extension-ubuntu-passkey
+Package: gnome-shell-extension-linux-passkey
 Architecture: all
-Depends: ${misc:Depends}, gnome-shell (>= 45), ubuntu-passkey (= ${binary:Version})
-Description: GNOME Shell integration for Ubuntu Passkey
+Depends: ${misc:Depends}, gnome-shell (>= 45), linux-passkey (= ${binary:Version})
+Breaks: gnome-shell-extension-ubuntu-passkey
+Replaces: gnome-shell-extension-ubuntu-passkey
+Description: GNOME Shell integration for Linux Passkey
  Shows system-modal approval prompts in GNOME Shell when a website wants to
  create or use a passkey, and adds a Passkeys status menu to the top bar.

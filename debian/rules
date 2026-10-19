@@ -14,4 +14,4 @@ override_dh_auto_install:
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp PREFIX=/usr
 
 override_dh_python3:
-	dh_python3 -p ubuntu-passkey /usr/share/ubuntu-passkey
+	dh_python3 -p linux-passkey /usr/share/linux-passkey

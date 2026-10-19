@@ -2,7 +2,6 @@
 
 import hashlib
 import os
-import subprocess
 import threading
 import time
 
@@ -10,97 +9,14 @@ import pytest
 
 gi = pytest.importorskip("gi")
 gi.require_version("Gio", "2.0")
-from gi.repository import Gio, GLib  # noqa: E402
+from gi.repository import GLib  # noqa: E402
 
-from ubuntu_passkey import DBUS_INTERFACE, DBUS_NAME, DBUS_PATH, cbor  # noqa: E402
-from ubuntu_passkey.ctap2 import Request  # noqa: E402
+from linux_passkey import cbor  # noqa: E402
+from linux_passkey.ctap2 import Request  # noqa: E402
 
-pytestmark = pytest.mark.skipif(
-    not any(
-        os.access(os.path.join(p, "dbus-daemon"), os.X_OK)
-        for p in os.environ.get("PATH", "").split(os.pathsep)
-    ),
-    reason="dbus-daemon not installed",
-)
+from conftest import call, connect, name_has_owner, needs_dbus, wait_for_state  # noqa: E402
 
-
-@pytest.fixture(scope="module")
-def bus():
-    proc = subprocess.Popen(
-        ["dbus-daemon", "--session", "--nofork", "--print-address"],
-        stdout=subprocess.PIPE,
-        text=True,
-    )
-    address = proc.stdout.readline().strip()
-    old = os.environ.get("DBUS_SESSION_BUS_ADDRESS")
-    os.environ["DBUS_SESSION_BUS_ADDRESS"] = address
-    yield address
-    proc.terminate()
-    proc.wait()
-    if old is None:
-        os.environ.pop("DBUS_SESSION_BUS_ADDRESS", None)
-    else:
-        os.environ["DBUS_SESSION_BUS_ADDRESS"] = old
-
-
-@pytest.fixture
-def daemon(bus, env, monkeypatch):
-    from ubuntu_passkey.daemon import Daemon
-
-    monkeypatch.delenv("DISPLAY", raising=False)
-    monkeypatch.delenv("WAYLAND_DISPLAY", raising=False)
-    d = Daemon(uhid_path="/nonexistent/uhid", key_backend="file")
-    d.config.override("verification", "none")  # no polkit in tests
-    thread = threading.Thread(target=d.run, daemon=True)
-    thread.start()
-    client = connect()
-    wait_for_state(client, ("ready",))
-    yield d
-    GLib.idle_add(d.loop.quit)
-    thread.join(timeout=5)
-    for _ in range(100):
-        if not name_has_owner(client):
-            break
-        time.sleep(0.05)
-
-
-def wait_for_state(conn, states):
-    for _ in range(200):
-        try:
-            if name_has_owner(conn) and call(conn, "GetStatus")[0]["state"] in states:
-                return
-        except GLib.Error:
-            pass
-        time.sleep(0.05)
-    raise AssertionError("daemon never reached %s" % (states,))
-
-
-def connect():
-    address = os.environ["DBUS_SESSION_BUS_ADDRESS"]
-    return Gio.DBusConnection.new_for_address_sync(
-        address,
-        Gio.DBusConnectionFlags.AUTHENTICATION_CLIENT
-        | Gio.DBusConnectionFlags.MESSAGE_BUS_CONNECTION,
-        None,
-        None,
-    )
-
-
-def name_has_owner(conn):
-    reply = conn.call_sync(
-        "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
-        "NameHasOwner", GLib.Variant("(s)", (DBUS_NAME,)), None,
-        Gio.DBusCallFlags.NONE, 1000, None,
-    )
-    return reply.unpack()[0]
-
-
-def call(conn, method, params=None):
-    reply = conn.call_sync(
-        DBUS_NAME, DBUS_PATH, DBUS_INTERFACE, method, params, None,
-        Gio.DBusCallFlags.NONE, 5000, None,
-    )
-    return reply.unpack() if reply is not None else ()
+pytestmark = needs_dbus
 
 
 def make_credential(d, name="alice"):
@@ -202,8 +118,8 @@ def test_settings(daemon):
 def test_unreadable_store_is_reported_and_recoverable(bus, env, monkeypatch):
     """A store that cannot be decrypted must not crash the daemon: it reports
     the problem, keeps the file aside on reset and starts working again."""
-    from ubuntu_passkey import paths
-    from ubuntu_passkey.daemon import Daemon
+    from linux_passkey import paths
+    from linux_passkey.daemon import Daemon
 
     monkeypatch.delenv("DISPLAY", raising=False)
     monkeypatch.delenv("WAYLAND_DISPLAY", raising=False)
@@ -252,7 +168,7 @@ def test_fallback_prompt_receives_request_on_stdin(daemon, monkeypatch, tmp_path
     import json
     import sys
 
-    from ubuntu_passkey.ctap2 import Prompt
+    from linux_passkey.ctap2 import Prompt
 
     script = tmp_path / "prompt.py"
     record = tmp_path / "seen.json"

@@ -1,6 +1,6 @@
 import pytest
 
-from ubuntu_passkey import cbor
+from linux_passkey import cbor
 
 
 @pytest.mark.parametrize(

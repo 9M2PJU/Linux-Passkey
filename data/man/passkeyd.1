@@ -1,6 +1,6 @@
-.TH PASSKEYD 1 "October 2026" "ubuntu-passkey 0.1.0" "User Commands"
+.TH PASSKEYD 1 "October 2026" "linux-passkey 0.1.0" "User Commands"
 .SH NAME
-passkeyd \- Ubuntu Passkey FIDO2 authenticator service
+passkeyd \- Linux Passkey FIDO2 authenticator service
 .SH SYNOPSIS
 .B passkeyd
 [\fB\-v\fR] [\fB\-\-uhid\fR \fIPATH\fR] [\fB\-\-key\-backend\fR \fBauto\fR|\fBkeyring\fR|\fBfile\fR] [\fB\-\-usb\-id\fR \fIVID:PID\fR]
@@ -14,7 +14,7 @@ that web browsers use to create and use passkeys, and offers a D\-Bus service
 GNOME Shell extension and the Passkeys application.
 .PP
 It is normally started by the
-.B ubuntu\-passkey.service
+.B linux\-passkey.service
 systemd user unit at login and should not be run by hand.
 .SH OPTIONS
 .TP
@@ -35,15 +35,15 @@ USB vendor and product ID (hexadecimal) reported by the virtual key.
 Print the version and exit.
 .SH FILES
 .TP
-.I ~/.local/share/ubuntu\-passkey/credentials.enc
+.I ~/.local/share/linux\-passkey/credentials.enc
 Encrypted passkey metadata.
 .TP
-.I ~/.local/share/ubuntu\-passkey/key\-backend
+.I ~/.local/share/linux\-passkey/key\-backend
 Location of the master key.
 .TP
-.I ~/.config/ubuntu\-passkey/config.json
+.I ~/.config/linux\-passkey/config.json
 Settings.
 .SH SEE ALSO
-.BR ubuntu\-passkey (1),
+.BR linux\-passkey (1),
 .BR pkcheck (1),
 .BR systemctl (1)

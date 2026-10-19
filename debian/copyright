@@ -1,9 +1,9 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: ubuntu-passkey
-Source: https://github.com/HaythmKenway/Ubuntu-Passkey
+Upstream-Name: linux-passkey
+Source: https://github.com/HaythmKenway/Linux-Passkey
 
 Files: *
-Copyright: 2026 Ubuntu Passkey contributors
+Copyright: 2026 Linux Passkey contributors
 License: GPL-3.0-or-later
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by

@@ -1,0 +1,13 @@
+[Desktop Entry]
+# The authenticator at sign-in, for the snap. snapd matches this file by
+# name to the daemon app's `autostart:` and runs that app; Exec names it for
+# anything else that reads the entry.
+Type=Application
+Name=Linux Passkey service
+Comment=Answers passkey requests from the browser extension
+Exec=linux-passkey.daemon
+Icon=io.github.haythmkenway.Passkey
+Terminal=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
+X-KDE-autostart-phase=2

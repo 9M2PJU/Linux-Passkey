@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Linux Passkey",
+  "version": "0.1.0",
+  "description": "Use passkeys stored on this computer, confirmed with your Linux password or fingerprint.",
+  "homepage_url": "https://github.com/HaythmKenway/Linux-Passkey",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7dGQSY9aiGoNOJR5ljC6sn6kMm1uPpHBLsInHqkNgWMvfIkxxhLMX3L1ZGm8jJKOGljRbcMp49+21oFXzxjL9FMr/nCdO1JfivZ+4lLQKsV2dcNsWtUz/XQePOID0JWEvo8Ig7amxpiDYKT9HQE1/JvzX6X70q0qIDR7QlyexOka+FzqQY5P9ATG5sywH2UnP+ShVRucSO3evrbLPvHsJ1BGIT0be0oXoxZjS5qp4M9Ll7ngwf1Ia1xy6eCIN9IrAAKBvHT+mWuXxK9P9Ao2tOWkWlb2Zh+iMtT+gZc6XaYLVceN724irYd7c5PYnri4p3PHYHIfnDGTJxk7aYhjnQIDAQAB",
+  "minimum_chrome_version": "111",
+  "permissions": ["nativeMessaging"],
+  "background": {
+    "service_worker": "background.js",
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*", "http://*.localhost/*"],
+      "js": ["page.js"],
+      "world": "MAIN",
+      "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "matches": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*", "http://*.localhost/*"],
+      "js": ["bridge.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "icons": {
+    "128": "icon-128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "linux-passkey@haythmkenway.github.io",
+      "strict_min_version": "128.0"
+    }
+  }
+}

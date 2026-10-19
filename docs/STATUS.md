@@ -44,18 +44,18 @@ Snapshot after the second development session. The work is merged into `main`.
 ## Test plan for your system (Ubuntu 24.04 desktop)
 
 ```sh
-git clone https://github.com/HaythmKenway/Ubuntu-Passkey
-cd Ubuntu-Passkey
+git clone https://github.com/HaythmKenway/Linux-Passkey
+cd Linux-Passkey
 sudo apt install build-essential debhelper dh-python python3-all gettext
 make deb
-sudo apt install ../ubuntu-passkey_0.1.0_all.deb ../gnome-shell-extension-ubuntu-passkey_0.1.0_all.deb
+sudo apt install ../linux-passkey_0.1.0_all.deb ../gnome-shell-extension-linux-passkey_0.1.0_all.deb
 ```
 Then **log out and back in**.
 
 | # | Test | Expected |
 |---|---|---|
 | 1 | `ls -l /dev/uhid; getfacl /dev/uhid` | The device exists and your user has an `rw` ACL entry |
-| 2 | `systemctl --user status ubuntu-passkey` | `active (running)`, no errors |
+| 2 | `systemctl --user status linux-passkey` | `active (running)`, no errors |
 | 3 | `gnome-extensions enable passkey@haythmkenway.github.io`, then open **Passkeys** | The top-bar icon appears; the app shows Running, Ready, and "GNOME Shell extension" |
 | 4 | Visit https://webauthn.io, set *Authenticator Attachment: Cross-Platform* and *Discoverable Credential: Required*, then **Register** | The GNOME prompt says "Create a Passkey?", the polkit password dialog appears, registration succeeds, and the passkey shows in the app |
 | 4b | Same as 4 with fingerprint login enabled (`sudo pam-auth-update`) | polkit accepts your fingerprint |
@@ -67,7 +67,7 @@ Then **log out and back in**.
 
 If something fails, collect:
 ```sh
-journalctl --user -u ubuntu-passkey -b --no-pager | tail -50
+journalctl --user -u linux-passkey -b --no-pager | tail -50
 journalctl --user -b --no-pager | grep -iE "passkey|JS ERROR" | tail -30
 ```
-For more detail, run `passkeyd --verbose` in a terminal after `systemctl --user stop ubuntu-passkey`.
+For more detail, run `passkeyd --verbose` in a terminal after `systemctl --user stop linux-passkey`.

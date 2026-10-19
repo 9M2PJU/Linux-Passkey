@@ -2,62 +2,147 @@ name: CI
 
 on:
   push:
+    paths-ignore: ["**.md", "docs/**", "LICENSE"]
   pull_request:
+    paths-ignore: ["**.md", "docs/**", "LICENSE"]
+  workflow_dispatch:
+
+# A newer push to the same branch makes the running workflow pointless.
+# Tag builds publish a release, so they always run to the end.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+permissions:
+  contents: read
+
+env:
+  # Retry flaky mirrors instead of failing the job.
+  APT: sudo apt-get -o Acquire::Retries=3 -o DPkg::Lock::Timeout=120 -y -q --no-install-recommends
 
 jobs:
-  test:
+  lint:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            python3-gi python3-cryptography python3-pytest python3-pyflakes \
-            gir1.2-glib-2.0 dbus desktop-file-utils appstream libxml2-utils polkitd
-          sudo pip3 install --break-system-packages "fido2>=2"
-      - uses: actions/setup-node@v4
+          $APT update
+          $APT install python3-pyflakes desktop-file-utils appstream libxml2-utils polkitd
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
-      - name: Lint
-        run: make lint
-      - name: Test
-        run: make check
+      - name: Cache ESLint
+        uses: actions/cache@v6
+        with:
+          path: ~/.npm
+          key: npm-eslint-9.15.0
+      - run: make lint
+
+  test:
+    # The oldest supported release (Python 3.10) and the current LTS.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install dependencies
+        run: |
+          $APT update
+          $APT install python3-gi python3-cryptography python3-pytest python3-venv \
+            gir1.2-glib-2.0 dbus publicsuffix
+      - name: Cache pip
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ matrix.os }}-fido2-2
+      - name: Install python-fido2
+        # A venv that sees the system's PyGObject, so no pip flags differ
+        # between releases.
+        run: |
+          python3 -m venv --system-site-packages .venv
+          .venv/bin/pip install -q "fido2>=2,<3" pytest
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - run: make check PYTHON=python
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
 
   package:
     runs-on: ubuntu-24.04
-    needs: test
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install build dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            build-essential debhelper dh-python python3-all zip gettext lintian \
-            python3-gi python3-cryptography python3-pytest
+          $APT update
+          $APT install build-essential debhelper dh-python python3-all zip gettext lintian
       - name: Build Debian packages
         run: |
-          make deb
+          DEB_BUILD_OPTIONS=nocheck make deb
           lintian --fail-on warning ../*.deb
           mkdir -p dist && mv ../*.deb dist/
-      - name: Build GNOME Shell extension
-        run: make extension-zip
-      - uses: actions/upload-artifact@v4
+      - name: Build the extensions
+        run: |
+          make extension-zip
+          make browser-extension-zip
+      - uses: actions/upload-artifact@v7
         with:
-          name: ubuntu-passkey
+          name: linux-passkey
           path: dist/*
+          if-no-files-found: error
+
+  snap:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    outputs:
+      snap: ${{ steps.build.outputs.snap }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: snapcore/action-build@v1
+        id: build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: snap
+          path: ${{ steps.build.outputs.snap }}
+          if-no-files-found: error
+
+  # The Snap Store: every push to main goes to edge, a version tag to
+  # candidate (promote it to stable from the Store dashboard). Needs the
+  # SNAPCRAFT_STORE_CREDENTIALS secret (snapcraft export-login).
+  snap-publish:
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    needs: [lint, test, snap]
+    environment: snap-store
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: snap
+      - uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        with:
+          snap: ${{ needs.snap.outputs.snap }}
+          release: ${{ startsWith(github.ref, 'refs/tags/v') && 'candidate' || 'edge' }}
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
-    needs: package
+    timeout-minutes: 10
+    needs: [lint, test, package]
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
-          name: ubuntu-passkey
+          name: linux-passkey
           path: dist
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: dist/*
+          fail_on_unmatched_files: true

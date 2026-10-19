@@ -3,8 +3,8 @@
  "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
  "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
 <policyconfig>
-  <vendor>Ubuntu Passkey</vendor>
-  <vendor_url>https://github.com/HaythmKenway/Ubuntu-Passkey</vendor_url>
+  <vendor>Linux Passkey</vendor>
+  <vendor_url>https://github.com/HaythmKenway/Linux-Passkey</vendor_url>
   <icon_name>io.github.haythmkenway.Passkey</icon_name>
 
   <!-- User verification for passkeys: the user proves who they are with

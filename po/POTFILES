@@ -1,7 +1,7 @@
-ubuntu_passkey/prompts.py
-ubuntu_passkey/app/main.py
-ubuntu_passkey/app/prompt.py
-ubuntu_passkey/app/window.py
+linux_passkey/prompts.py
+linux_passkey/app/main.py
+linux_passkey/app/prompt.py
+linux_passkey/app/window.py
 gnome-extension/passkey@haythmkenway.github.io/dialog.js
 gnome-extension/passkey@haythmkenway.github.io/extension.js
 gnome-extension/passkey@haythmkenway.github.io/prompts.js

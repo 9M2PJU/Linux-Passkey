@@ -3,7 +3,7 @@ import struct
 import threading
 import time
 
-from ubuntu_passkey import ctaphid
+from linux_passkey import ctaphid
 
 
 class Collector:

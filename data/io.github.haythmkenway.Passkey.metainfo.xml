@@ -4,10 +4,10 @@
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
   <name>Passkeys</name>
-  <summary>Passkeys for Ubuntu</summary>
+  <summary>Passkeys for Linux</summary>
   <description>
     <p>
-      Ubuntu Passkey turns your computer into a FIDO2 security key, so you can
+      Linux Passkey turns your computer into a FIDO2 security key, so you can
       create and use passkeys on any website that supports them, in any browser,
       without extra hardware.
     </p>
@@ -19,15 +19,15 @@
     </ul>
   </description>
   <launchable type="desktop-id">io.github.haythmkenway.Passkey.desktop</launchable>
-  <url type="homepage">https://github.com/HaythmKenway/Ubuntu-Passkey</url>
-  <url type="bugtracker">https://github.com/HaythmKenway/Ubuntu-Passkey/issues</url>
+  <url type="homepage">https://github.com/HaythmKenway/Linux-Passkey</url>
+  <url type="bugtracker">https://github.com/HaythmKenway/Linux-Passkey/issues</url>
   <developer id="io.github.haythmkenway">
-    <name>Ubuntu Passkey contributors</name>
+    <name>Linux Passkey contributors</name>
   </developer>
   <screenshots>
     <screenshot type="default">
       <caption>Manage the passkeys stored on this computer</caption>
-      <image>https://raw.githubusercontent.com/HaythmKenway/Ubuntu-Passkey/main/docs/screenshots/app.png</image>
+      <image>https://raw.githubusercontent.com/HaythmKenway/Linux-Passkey/main/docs/screenshots/app.png</image>
     </screenshot>
   </screenshots>
   <content_rating type="oars-1.1"/>

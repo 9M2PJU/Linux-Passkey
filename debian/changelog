@@ -1,6 +1,6 @@
-ubuntu-passkey (0.1.0) noble; urgency=medium
+linux-passkey (0.1.0) noble; urgency=medium
 
   * Initial release: CTAP 2.1 software authenticator with virtual uhid
     security key, Passkeys GTK app and GNOME Shell extension.
 
- -- Ubuntu Passkey contributors <noreply@github.com>  Mon, 19 Oct 2026 12:00:00 +0000
+ -- Linux Passkey contributors <noreply@github.com>  Mon, 19 Oct 2026 12:00:00 +0000

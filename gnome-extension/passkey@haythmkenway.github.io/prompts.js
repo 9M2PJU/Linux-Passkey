@@ -1,7 +1,7 @@
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 /**
- * Wording of approval prompts (mirrors ubuntu_passkey/prompts.py).
+ * Wording of approval prompts (mirrors linux_passkey/prompts.py).
  *
  * @param {string} operation register | authenticate | choose | exclude | select | reset
  * @param {string} rpId relying party ID (website domain)
@@ -48,12 +48,12 @@ export function describe(operation, rpId, accounts) {
     case 'reset':
         return {
             title: _('Delete All Passkeys?'),
-            body: _('A website or app asked to reset Ubuntu Passkey. Every passkey will be permanently deleted.'),
+            body: _('A website or app asked to reset Linux Passkey. Every passkey will be permanently deleted.'),
             action: _('Delete All'),
         };
     default:
         return {
-            title: _('Use Ubuntu Passkey?'),
+            title: _('Use Linux Passkey?'),
             body: _('A website wants to use the passkeys on this device.'),
             action: _('Use'),
         };

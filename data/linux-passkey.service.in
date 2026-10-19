@@ -1,0 +1,29 @@
+[Unit]
+Description=Linux Passkey authenticator
+Documentation=https://github.com/HaythmKenway/Linux-Passkey
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=dbus
+BusName=io.github.haythmkenway.Passkey.Daemon
+ExecStart=@bindir@/passkeyd
+Restart=on-failure
+RestartSec=5
+# The daemon only needs /dev/uhid, the session bus and its own data. Only
+# seccomp-based restrictions are used: namespace-based ones need unprivileged
+# user namespaces, which Ubuntu restricts. MemoryDenyWriteExecute is left out
+# because PyGObject's libffi callbacks need writable+executable trampolines.
+UMask=0077
+NoNewPrivileges=yes
+LockPersonality=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=graphical-session.target

@@ -1,8 +1,11 @@
 #!/usr/bin/python3
+import os
 import sys
 
 sys.path.insert(0, "@pkgdatadir@")
+# The browser extension's native messaging host, registered at start-up.
+os.environ.setdefault("PASSKEY_NATIVE_HOST", "@libexecdir@/native-host")
 
-from ubuntu_passkey.daemon import main  # noqa: E402
+from linux_passkey.daemon import main  # noqa: E402
 
 sys.exit(main())

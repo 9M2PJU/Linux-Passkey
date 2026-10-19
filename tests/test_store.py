@@ -3,9 +3,9 @@ import os
 
 import pytest
 
-from ubuntu_passkey import keys
-from ubuntu_passkey.masterkey import MasterKeyError, MasterKeyManager
-from ubuntu_passkey.store import CredentialStore
+from linux_passkey import keys
+from linux_passkey.masterkey import MasterKeyError, MasterKeyManager
+from linux_passkey.store import CredentialStore
 
 RP_HASH = hashlib.sha256(b"example.com").digest()
 
@@ -81,7 +81,7 @@ def test_keyring_marker_without_keyring_fails(env, monkeypatch):
     with open(mgr.marker, "w") as f:
         f.write("keyring\n")
     monkeypatch.setattr(
-        "ubuntu_passkey.masterkey.SecretServiceBackend.available", lambda self: False
+        "linux_passkey.masterkey.SecretServiceBackend.available", lambda self: False
     )
     with pytest.raises(MasterKeyError):
         mgr.get()

@@ -15,7 +15,7 @@ from fido2.webauthn import (  # noqa: E402
     UserVerificationRequirement,
 )
 
-from ubuntu_passkey import ctap2  # noqa: E402
+from linux_passkey import ctap2  # noqa: E402
 
 ORIGIN = "https://example.com"
 RP = PublicKeyCredentialRpEntity(id="example.com", name="Example")
@@ -204,7 +204,7 @@ def test_prf_extension(hid_device):
 
     one = evaluate(b"salt-1" * 5, b"salt-2" * 5)
     two = evaluate(b"salt-1" * 5)
-    from ubuntu_passkey.store import b64d
+    from linux_passkey.store import b64d
 
     assert len(b64d(one["first"])) == 32 and len(b64d(one["second"])) == 32
     assert one["first"] == two["first"]  # deterministic per credential and salt
