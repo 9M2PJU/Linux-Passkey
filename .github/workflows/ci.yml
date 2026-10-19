@@ -230,7 +230,10 @@ jobs:
           path: release/*
           if-no-files-found: error
 
+  # Paused with snap-publish while the Store reviews the snap: the same
+  # SNAP_PUBLISH variable turns both back on.
   snap:
+    if: vars.SNAP_PUBLISH == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     outputs:

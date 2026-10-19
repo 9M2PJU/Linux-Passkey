@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">Linux Passkey</title>
+  <desc id="desc">Windows Hello-style passkeys for Linux: a website asks to create a passkey, and you approve it with your Linux password or fingerprint.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1c0f1b"/>
+      <stop offset="1" stop-color="#2d1022"/>
+    </linearGradient>
+    <radialGradient id="glow-a" cx="0.82" cy="0.18" r="0.55">
+      <stop offset="0" stop-color="#f26b3a" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#f26b3a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-b" cx="0.12" cy="0.95" r="0.6">
+      <stop offset="0" stop-color="#b0306a" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#b0306a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f26b3a"/>
+      <stop offset="1" stop-color="#b0306a"/>
+    </linearGradient>
+    <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#fff" stroke-opacity="0.045" stroke-width="1"/>
+    </pattern>
+    <filter id="lift" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#sky)"/>
+  <rect width="1280" height="640" fill="url(#grid)"/>
+  <rect width="1280" height="640" fill="url(#glow-a)"/>
+  <rect width="1280" height="640" fill="url(#glow-b)"/>
+
+  <g font-family="Inter, Cantarell, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+    <!-- The app icon (data/icons/hicolor/scalable/apps). -->
+    <g transform="translate(88 118) scale(0.875)">
+      <rect x="8" y="12" width="112" height="108" rx="24" fill="#7a1f4a"/>
+      <rect x="8" y="8" width="112" height="108" rx="24" fill="url(#bg)"/>
+      <rect x="8" y="8" width="112" height="54" rx="24" fill="url(#shade)"/>
+      <circle cx="50" cy="44" r="15" fill="#fff"/>
+      <path d="M22 92c0-17 12.5-28 28-28 7 0 13.4 2.3 18 6.3V92z" fill="#fff"/>
+      <circle cx="86" cy="62" r="13" fill="none" stroke="#fff" stroke-width="7"/>
+      <path d="M86 75v27l6 5 6-5-4-4 4-4-4-4 4-4-4-4" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>
+    </g>
+
+    <text x="92" y="318" fill="#fff" font-size="68" font-weight="800" letter-spacing="-1.5">Linux Passkey</text>
+    <text x="94" y="372" fill="#f6d4cf" font-size="27" font-weight="500">Windows Hello-style passkeys for Linux.</text>
+    <text x="94" y="410" fill="#c9a7b6" font-size="20">Confirmed with your Linux password or fingerprint.</text>
+    <text x="94" y="440" fill="#c9a7b6" font-size="20">No phone, no hardware key.</text>
+
+    <!-- What it works with. -->
+    <g font-size="17" font-weight="650" fill="#fbe9e4">
+      <rect x="92" y="486" width="228" height="40" rx="20" fill="#fff" fill-opacity="0.09" stroke="#fff" stroke-opacity="0.18"/>
+      <text x="206" y="512" text-anchor="middle">Chrome · Firefox · Brave</text>
+      <rect x="332" y="486" width="186" height="40" rx="20" fill="#fff" fill-opacity="0.09" stroke="#fff" stroke-opacity="0.18"/>
+      <text x="425" y="512" text-anchor="middle">Any desktop</text>
+      <rect x="530" y="486" width="132" height="40" rx="20" fill="#fff" fill-opacity="0.09" stroke="#fff" stroke-opacity="0.18"/>
+      <text x="596" y="512" text-anchor="middle">CTAP 2.1</text>
+    </g>
+
+    <!-- The approval prompt. -->
+    <g transform="translate(772 112)" filter="url(#lift)">
+      <rect width="420" height="416" rx="22" fill="#2a2430"/>
+      <rect width="420" height="416" rx="22" fill="none" stroke="#fff" stroke-opacity="0.1"/>
+
+      <!-- Fingerprint -->
+      <g transform="translate(210 82)" fill="none" stroke="url(#bg)" stroke-width="4.5" stroke-linecap="round">
+        <circle r="44" fill="#fff" fill-opacity="0.05" stroke="none"/>
+        <path d="M-22 -14a26 26 0 0 1 44 0"/>
+        <path d="M-27 4a28 28 0 0 1 6-20"/>
+        <path d="M-15 24c-5-6-7-13-7-20a22 22 0 0 1 44 0v4"/>
+        <path d="M-6 30c-5-7-8-16-8-26a14 14 0 0 1 28 0c0 9 3 16 8 21"/>
+        <path d="M5 32c-6-8-9-18-9-28a4 4 0 0 1 8 0c0 12 5 22 13 29"/>
+      </g>
+
+      <text x="210" y="172" text-anchor="middle" fill="#fff" font-size="26" font-weight="750">Create a passkey?</text>
+      <text x="210" y="204" text-anchor="middle" fill="#b9adbd" font-size="17">github.com wants to save a passkey</text>
+      <text x="210" y="228" text-anchor="middle" fill="#b9adbd" font-size="17">on this computer.</text>
+
+      <!-- Account row -->
+      <rect x="32" y="254" width="356" height="60" rx="14" fill="#fff" fill-opacity="0.06"/>
+      <circle cx="66" cy="284" r="17" fill="url(#bg)"/>
+      <text x="66" y="290" text-anchor="middle" fill="#fff" font-size="16" font-weight="800">A</text>
+      <text x="96" y="280" fill="#fff" font-size="17" font-weight="650">akileswar</text>
+      <text x="96" y="301" fill="#9d90a2" font-size="14">github.com</text>
+
+      <!-- Buttons -->
+      <rect x="32" y="338" width="170" height="48" rx="12" fill="#fff" fill-opacity="0.08"/>
+      <text x="117" y="368" text-anchor="middle" fill="#e9e1ea" font-size="17" font-weight="650">Cancel</text>
+      <rect x="218" y="338" width="170" height="48" rx="12" fill="url(#bg)"/>
+      <text x="303" y="368" text-anchor="middle" fill="#fff" font-size="17" font-weight="750">Continue</text>
+    </g>
+  </g>
+</svg>
