@@ -417,3 +417,20 @@ def test_get_info_remaining_capacity(hid_device):
     before = Ctap2(hid_device).get_info().remaining_disc_creds
     register(hid_device)
     assert Ctap2(hid_device).get_info().remaining_disc_creds == before - 1
+
+
+def test_verification_failure_codes(hid_device, ui):
+    """A failed check is UV_INVALID (retryable); a dismissed prompt is
+    OPERATION_DENIED."""
+    from fido2.ctap import CtapError
+    from fido2.ctap2.pin import ClientPin
+
+    ctap = Ctap2(hid_device)
+    ui.verify_result = False
+    with pytest.raises(CtapError) as err:
+        ClientPin(ctap).get_uv_token(ClientPin.PERMISSION.MAKE_CREDENTIAL, "example.com")
+    assert err.value.code == CtapError.ERR.UV_INVALID
+    ui.verify_result = ctap2.Denied
+    with pytest.raises(CtapError) as err:
+        ClientPin(ctap).get_uv_token(ClientPin.PERMISSION.MAKE_CREDENTIAL, "example.com")
+    assert err.value.code == CtapError.ERR.OPERATION_DENIED

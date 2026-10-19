@@ -80,12 +80,14 @@ def _decode(data, pos, depth):
             return True, pos
         if info in (22, 23):
             return None, pos
-        if info == 25:
-            return _half(data[pos:pos + 2]), pos + 2
-        if info == 26:
-            return struct.unpack(">f", data[pos:pos + 4])[0], pos + 4
-        if info == 27:
-            return struct.unpack(">d", data[pos:pos + 8])[0], pos + 8
+        if info in (25, 26, 27):
+            size = {25: 2, 26: 4, 27: 8}[info]
+            if pos + size > len(data):
+                raise CBORError("truncated")
+            raw = data[pos:pos + size]
+            if info == 25:
+                return _half(raw), pos + size
+            return struct.unpack(">f" if info == 26 else ">d", raw)[0], pos + size
         raise CBORError("unsupported simple value")
     arg, pos = _read_arg(data, pos, info)
     if major == 0:

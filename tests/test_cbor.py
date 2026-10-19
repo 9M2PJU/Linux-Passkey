@@ -58,3 +58,20 @@ def test_matches_fido2_library():
 def test_rejects_duplicate_map_keys():
     with pytest.raises(cbor.CBORError):
         cbor.decode(bytes.fromhex("a201020103"))  # {1: 2, 1: 3}
+
+
+@pytest.mark.parametrize("data", ["f9", "f900", "fa0000", "fb00000000000000", "d1fa"])
+def test_truncated_floats_and_tags(data):
+    with pytest.raises(cbor.CBORError):
+        cbor.decode(bytes.fromhex(data))
+
+
+def test_random_bytes_only_raise_cbor_error():
+    import random
+
+    rng = random.Random(7)
+    for _ in range(50000):
+        try:
+            cbor.decode(rng.randbytes(rng.randrange(0, 24)))
+        except cbor.CBORError:
+            pass

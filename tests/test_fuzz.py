@@ -1,6 +1,5 @@
 """Malformed input must produce CTAP errors, never crashes or hangs."""
 
-import os
 import random
 
 from ubuntu_passkey import cbor, ctaphid
@@ -13,7 +12,7 @@ def _random_value(rng, depth=0):
     if kind == 0:
         return rng.randrange(-(2**40), 2**40)
     if kind == 1:
-        return os.urandom(rng.randrange(0, 80))
+        return rng.randbytes(rng.randrange(0, 80))
     if kind == 2:
         return rng.choice(["", "id", "public-key", "example.com", "x" * 300, "hmac-secret"])
     if kind == 3:
@@ -28,10 +27,10 @@ def _random_value(rng, depth=0):
 
 def test_authenticator_survives_random_requests(authenticator):
     rng = random.Random(1234)
-    for _ in range(3000):
+    for _ in range(20000):
         cmd = rng.choice(COMMANDS)
-        if rng.random() < 0.15:
-            payload = os.urandom(rng.randrange(0, 64))
+        if rng.random() < 0.3:
+            payload = rng.randbytes(rng.randrange(0, 64))
         else:
             params = {rng.randrange(1, 11): _random_value(rng) for _ in range(rng.randrange(8))}
             payload = cbor.encode(params)
@@ -46,7 +45,7 @@ def test_ctaphid_survives_random_reports(authenticator):
     dev = ctaphid.CtapHidDevice(authenticator, sent.append)
     rng = random.Random(99)
     for _ in range(3000):
-        report = bytearray(os.urandom(rng.choice([1, 7, 63, 64, 65])))
+        report = bytearray(rng.randbytes(rng.choice([1, 7, 63, 64, 65])))
         if rng.random() < 0.5 and len(report) >= 5:
             report[:4] = b"\xff\xff\xff\xff"
         dev.handle_report(bytes(report))

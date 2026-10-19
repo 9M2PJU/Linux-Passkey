@@ -283,6 +283,8 @@ class Authenticator:
         request.status(STATUS_UPNEEDED)
         try:
             ok = self.ui.verify(prompt, request)
+        except Denied:
+            raise CtapError(ERR_OPERATION_DENIED, "user verification dismissed")
         except Cancelled:
             raise CtapError(ERR_KEEPALIVE_CANCEL, "cancelled by the client")
         except Timeout:
@@ -292,7 +294,8 @@ class Authenticator:
         if request.cancel.is_set():
             raise CtapError(ERR_KEEPALIVE_CANCEL, "cancelled by the client")
         if not ok:
-            raise CtapError(ERR_OPERATION_DENIED, "user verification failed")
+            # The platform may let the user try again (CTAP 2.1 section 6.5.5.7.3).
+            raise CtapError(ERR_UV_INVALID, "user verification failed")
 
     def _auth_data(self, rp_id_hash, flags, attested=b"", extensions=None):
         if extensions:

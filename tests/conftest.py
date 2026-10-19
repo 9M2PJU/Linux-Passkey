@@ -35,6 +35,8 @@ class FakeUI:
 
     def verify(self, prompt, request):
         self.verifications += 1
+        if isinstance(self.verify_result, type) and issubclass(self.verify_result, Exception):
+            raise self.verify_result()
         return self.verify_result
 
 

@@ -11,11 +11,16 @@ import shutil
 import subprocess
 import time
 
-from .ctap2 import Cancelled, Timeout
+from .ctap2 import Cancelled, Denied, Timeout
 
 log = logging.getLogger(__name__)
 
 ACTION_ID = "io.github.haythmkenway.passkey.verify"
+
+# pkcheck(1) exit statuses
+PKCHECK_AUTHORIZED = 0
+PKCHECK_NOT_AUTHORIZED = 1
+PKCHECK_DISMISSED = 3
 
 
 class PolkitVerifier:
@@ -27,9 +32,11 @@ class PolkitVerifier:
         return shutil.which("pkcheck") is not None
 
     def verify(self, cancel):
-        """Run the polkit prompt; return True on success.
+        """Run the polkit prompt.
 
-        Raises Cancelled if ``cancel`` is set while waiting, Timeout on timeout.
+        Returns True when the user proved their identity and False when they
+        failed to. Raises Denied when the prompt was dismissed or could not
+        be shown, Cancelled if ``cancel`` is set while waiting, and Timeout.
         """
         pkcheck = shutil.which("pkcheck")
         if pkcheck is None:
@@ -65,10 +72,17 @@ class PolkitVerifier:
                     proc.wait(timeout=2)
                 except subprocess.TimeoutExpired:
                     proc.kill()
-        if code != 0:
-            err = (proc.stderr.read() or "").strip()
-            log.info("polkit verification failed (exit %d): %s", code, err)
-        return code == 0
+        if code == PKCHECK_AUTHORIZED:
+            return True
+        err = (proc.stderr.read() or "").strip()
+        if code == PKCHECK_NOT_AUTHORIZED:
+            log.info("user verification failed: %s", err)
+            return False
+        if code == PKCHECK_DISMISSED:
+            log.info("user verification dismissed")
+        else:
+            log.warning("user verification unavailable (pkcheck exit %d): %s", code, err)
+        raise Denied()
 
 
 class NoVerifier:
