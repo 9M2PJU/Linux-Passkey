@@ -85,14 +85,149 @@ jobs:
           DEB_BUILD_OPTIONS=nocheck make deb
           lintian --fail-on warning ../*.deb
           mkdir -p dist && mv ../*.deb dist/
-      - name: Build the extensions
+      - name: Build the extensions and the release tarball
+        # After the .deb: its clean step empties dist/ of everything else.
         run: |
           make extension-zip
           make browser-extension-zip
+          make dist
       - uses: actions/upload-artifact@v7
         with:
-          name: linux-passkey
+          name: linux-passkey-deb
           path: dist/*
+          if-no-files-found: error
+
+  # Fedora (and RHEL 10 rebuilds) and openSUSE share the spec; each build is
+  # installed into a fresh container so wrong dependency names fail here.
+  rpm:
+    needs: package
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: fedora
+            image: fedora:44
+            install: dnf -y -q install
+            dist: ""
+          - distro: opensuse
+            image: opensuse/tumbleweed
+            install: zypper --non-interactive -q --no-gpg-checks install -y
+            dist: .opensuse
+    runs-on: ubuntu-24.04
+    container: ${{ matrix.image }}
+    timeout-minutes: 20
+    steps:
+      - name: Install build tools
+        run: ${{ matrix.install }} rpm-build make python3 rpmlint tar gzip
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: linux-passkey-deb
+          path: dist
+      - name: Build
+        run: |
+          rpmbuild -bb packaging/rpm/linux-passkey.spec \
+            --define "_sourcedir $PWD/dist" --define "_rpmdir $PWD/rpms" \
+            --define "_build_name_fmt %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm" \
+            ${{ matrix.dist && format('--define "dist {0}"', matrix.dist) || '' }}
+      - name: Lint
+        run: rpmlint -r packaging/rpm/linux-passkey.rpmlintrc rpms/*.rpm
+      - name: Install and start
+        run: |
+          ${{ matrix.install }} "$PWD"/rpms/*.rpm
+          passkeyd --version
+          test "$(systemctl --global is-enabled linux-passkey.service)" = enabled
+      - uses: actions/upload-artifact@v7
+        with:
+          name: linux-passkey-rpm-${{ matrix.distro }}
+          path: rpms/*.rpm
+          if-no-files-found: error
+
+  arch:
+    needs: package
+    runs-on: ubuntu-24.04
+    container: archlinux:latest
+    timeout-minutes: 20
+    steps:
+      - name: Install build tools
+        run: pacman -Syu --noconfirm --needed base-devel namcap
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: linux-passkey-deb
+          path: dist
+      - name: Build
+        # makepkg refuses to run as root. The PKGBUILD's checksum is filled
+        # in from the tarball, as for the AUR.
+        run: |
+          useradd -m builder
+          install -d -o builder build
+          cp packaging/arch/* dist/linux-passkey-*.tar.gz build/
+          cd build
+          sum=$(sha256sum linux-passkey-*.tar.gz | cut -d' ' -f1)
+          sed -i "s/^sha256sums=.*/sha256sums=('$sum')/" PKGBUILD
+          chown -R builder .
+          su builder -c 'makepkg --nodeps'
+          namcap PKGBUILD ./*.pkg.tar.zst || true
+      - name: Install
+        run: |
+          pacman -U --noconfirm build/*.pkg.tar.zst
+          passkeyd --version
+      - uses: actions/upload-artifact@v7
+        with:
+          name: linux-passkey-arch
+          path: build/*.pkg.tar.zst
+          if-no-files-found: error
+
+  # The repositories served at packages.akileswar.com/linux-passkey. Every run
+  # builds them and installs from them on each family with signatures checked;
+  # a tag signs them with the release key (secret LINUX_PASSKEY_GPG_KEY),
+  # anything else with a throwaway key.
+  repo:
+    needs: [package, rpm, arch]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: linux-passkey-*
+          path: artifacts
+      - name: Install tools
+        run: |
+          $APT update
+          $APT install apt-utils createrepo-c rpm gnupg
+      - name: Signing key
+        env:
+          KEY: ${{ startsWith(github.ref, 'refs/tags/v') && secrets.LINUX_PASSKEY_GPG_KEY || '' }}
+          TAGGED: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          if [ -n "$KEY" ]; then
+            echo "$KEY" | gpg --batch --import
+          elif [ "$TAGGED" = true ]; then
+            echo "::error::A release needs the LINUX_PASSKEY_GPG_KEY secret"; exit 1
+          else
+            gpg --batch --passphrase '' --quick-gen-key "Linux Passkey test <test@invalid>" rsa3072 sign 1d
+          fi
+          echo "GPG_FPR=$(gpg --list-secret-keys --with-colons | awk -F: '/^fpr/{print $10; exit}')" >> "$GITHUB_ENV"
+      - name: Build the repositories
+        run: |
+          mkdir pkgs
+          cp artifacts/linux-passkey-rpm-*/*.rpm artifacts/linux-passkey-arch/*.pkg.tar.zst artifacts/linux-passkey-deb/*.deb pkgs/
+          BASE=http://127.0.0.1:8765/linux-passkey tools/make-repo.sh pkgs repo-test
+          TAG=${GITHUB_REF_NAME} tools/make-repo.sh pkgs repo
+      - name: Install from them on each family
+        run: tools/test-repo.sh repo-test pkgs "$GPG_FPR"
+      - name: Collect the release files
+        run: |
+          mkdir release
+          cp pkgs/* repo/linux-passkey-repo.tar.gz artifacts/linux-passkey-deb/*.zip artifacts/linux-passkey-deb/*.tar.gz release/
+          (cd release && sha256sum -- * > SHA256SUMS)
+          ls -l release
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release
+          path: release/*
           if-no-files-found: error
 
   snap:
@@ -136,13 +271,13 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    needs: [lint, test, package]
+    needs: [lint, test, repo]
     permissions:
       contents: write
     steps:
       - uses: actions/download-artifact@v8
         with:
-          name: linux-passkey
+          name: release
           path: dist
       - uses: softprops/action-gh-release@v3
         with:

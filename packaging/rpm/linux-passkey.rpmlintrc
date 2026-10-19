@@ -1,0 +1,10 @@
+# Known and accepted; anything else fails CI.
+# Words of the trade that the dictionary lacks.
+addFilter("spelling-error")
+# Introspection typelibs are loaded at run time; a noarch package names the libraries.
+addFilter("explicit-lib-dependency")
+# The extension is documented by linux-passkey, which it requires.
+addFilter("no-documentation")
+# openSUSE's whitelist for polkit actions covers its own distribution only;
+# auth_self (the user's own password, never cached) is what verification needs.
+addFilter("polkit-user-privilege")

@@ -1,0 +1,35 @@
+# Maintainer: HaythmKenway <akileswar2002@protonmail.com>
+# Linux Passkey for Arch Linux and its derivatives.
+#
+# CI builds this from the release tarball (make dist) and fills in its
+# checksum for the AUR and the pacman repository at packages.akileswar.com.
+
+pkgbase=linux-passkey
+pkgname=(linux-passkey gnome-shell-extension-linux-passkey)
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Passkeys for Linux (FIDO2 / WebAuthn authenticator)'
+arch=(any)
+url='https://github.com/HaythmKenway/Linux-Passkey'
+license=(GPL-3.0-or-later)
+source=("$url/releases/download/v$pkgver/linux-passkey-$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+package_linux-passkey() {
+  depends=(python python-cryptography python-gobject glib2 gtk4 'libadwaita>=1:1.5' hicolor-icon-theme
+           libsecret publicsuffix-list polkit systemd)
+  optdepends=('gnome-shell-extension-linux-passkey: approval prompts as GNOME Shell dialogs'
+              'gnome-keyring: a login keyring for the master key')
+  install=linux-passkey.install
+
+  cd "linux-passkey-$pkgver"
+  make install-app install-locale DESTDIR="$pkgdir" PREFIX=/usr libexecdir=/usr/lib/linux-passkey
+}
+
+package_gnome-shell-extension-linux-passkey() {
+  pkgdesc='GNOME Shell integration for Linux Passkey'
+  depends=("linux-passkey=$pkgver-$pkgrel" 'gnome-shell>=1:45')
+
+  cd "linux-passkey-$pkgver"
+  make install-extension DESTDIR="$pkgdir" PREFIX=/usr
+}

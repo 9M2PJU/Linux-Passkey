@@ -35,7 +35,7 @@ Without the GNOME extension, approval prompts open in a window of their own, so 
 ## Features
 
 - **A built-in authenticator in every major browser:** through the browser extension, sites see a user-verifying platform authenticator, as on Windows and macOS. Requests meant for something else (a hardware security key, a phone, a site you have no passkey for here) go to the browser's own dialog unchanged.
-- **Also a USB security key** (`.deb` and source installs): browsers without the extension see the computer as a plugged-in FIDO2 key.
+- **Also a USB security key** (distribution packages and source installs): browsers without the extension see the computer as a plugged-in FIDO2 key.
 - **Passkeys and regular security-key logins:** supports discoverable credentials (passkeys, username-less sign-in) and non-discoverable credentials (second factor), with no limit on how many you store.
 - **CTAP 2.1:** built-in user verification through `pinUvAuthToken` (protocols 1 and 2), credential management (so browsers' *security key settings* can list, rename and delete passkeys), `credProtect`, `hmac-secret` (so the WebAuthn **PRF** extension works), ES256 and EdDSA keys, account selection, and `authenticatorSelection`. See [docs/COMPLIANCE.md](docs/COMPLIANCE.md) for the standards audit.
 - **Identity verification uses your system login:** polkit shows GNOME's own authentication dialog. It accepts your password, or your fingerprint if you have enabled fingerprint login.
@@ -44,15 +44,15 @@ Without the GNOME extension, approval prompts open in a window of their own, so 
 
 ## Install
 
-### From the Debian packages (Debian, Ubuntu and derivatives)
+Signed repositories for every major distribution family are at **[packages.akileswar.com/linux-passkey](https://packages.akileswar.com/linux-passkey/)**, so updates arrive with the system's own. Each [release](https://github.com/HaythmKenway/Linux-Passkey/releases) also has the packages to download.
 
-Download both `.deb` files from the [latest release](https://github.com/HaythmKenway/Linux-Passkey/releases), then:
+### Debian 13+, Ubuntu 24.04+, Mint, Pop!_OS
 
 ```sh
-sudo apt install ./linux-passkey_*_all.deb ./gnome-shell-extension-linux-passkey_*_all.deb
+curl -fsSL https://packages.akileswar.com/linux-passkey/linux-passkey.gpg | sudo tee /usr/share/keyrings/linux-passkey.gpg >/dev/null
+echo "deb [signed-by=/usr/share/keyrings/linux-passkey.gpg] https://packages.akileswar.com/linux-passkey/apt stable main" | sudo tee /etc/apt/sources.list.d/linux-passkey.list
+sudo apt update && sudo apt install linux-passkey gnome-shell-extension-linux-passkey
 ```
-
-**Log out and back in.** This lets udev give your session access to `/dev/uhid` and starts the service.
 
 Ubuntu Desktop kernels include the `uhid` module. Minimal and server installs (the `linux-image-virtual` kernel) keep it in `linux-modules-extra`; the package warns at install time if it is missing:
 
@@ -60,7 +60,35 @@ Ubuntu Desktop kernels include the `uhid` module. Minimal and server installs (t
 sudo apt install linux-modules-extra-$(uname -r)
 ```
 
-Then turn on the GNOME extension:
+### Fedora 41+, RHEL 10, AlmaLinux 10, Rocky Linux 10
+
+```sh
+sudo curl -fsSL https://packages.akileswar.com/linux-passkey/rpm/fedora/linux-passkey.repo -o /etc/yum.repos.d/linux-passkey.repo
+sudo dnf install linux-passkey gnome-shell-extension-linux-passkey
+```
+
+### openSUSE Tumbleweed
+
+```sh
+sudo zypper addrepo https://packages.akileswar.com/linux-passkey/rpm/opensuse/linux-passkey.repo
+sudo zypper install linux-passkey gnome-shell-extension-linux-passkey
+```
+
+### Arch Linux, Manjaro, EndeavourOS
+
+```sh
+curl -fsSL https://packages.akileswar.com/linux-passkey/linux-passkey.asc -o /tmp/linux-passkey.asc
+sudo pacman-key --add /tmp/linux-passkey.asc && sudo pacman-key --lsign-key packages@akileswar.com
+printf '\n[linux-passkey]\nServer = https://packages.akileswar.com/linux-passkey/arch\n' | sudo tee -a /etc/pacman.conf
+sudo pacman -Sy linux-passkey gnome-shell-extension-linux-passkey
+systemctl --user enable --now linux-passkey.service
+```
+
+The recipe is [`packaging/arch/PKGBUILD`](packaging/arch/PKGBUILD) for building it yourself.
+
+### Then
+
+**Log out and back in.** This lets udev give your session access to `/dev/uhid` and starts the service. Then turn on the GNOME extension:
 
 ```sh
 gnome-extensions enable passkey@haythmkenway.github.io
@@ -68,13 +96,24 @@ gnome-extensions enable passkey@haythmkenway.github.io
 
 ### From source
 
+The dependencies, by family:
+
 ```sh
-sudo apt install python3-gi python3-cryptography gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-secret-1
+sudo apt install python3-gi python3-cryptography gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-secret-1 publicsuffix   # Debian, Ubuntu
+sudo dnf install python3-gobject python3-cryptography gtk4 libadwaita libsecret publicsuffix-list           # Fedora
+sudo pacman -S python-gobject python-cryptography gtk4 libadwaita libsecret publicsuffix-list               # Arch
+```
+
+Then:
+
+```sh
 sudo make install            # installs to /usr/local (udev/systemd/polkit files go to /usr)
 sudo modprobe uhid && sudo udevadm control --reload-rules && sudo udevadm trigger
 systemctl --user daemon-reload && systemctl --user enable --now linux-passkey.service
 gnome-extensions enable passkey@haythmkenway.github.io   # after logging in again
 ```
+
+`make deb`, `make rpm` and `makepkg` in `packaging/arch` build the distribution packages; `tools/make-repo.sh` builds the signed repositories from them, and CI does both for each release.
 
 ### The browser extension
 
@@ -155,7 +194,7 @@ passkeyd --verbose          # run in the foreground (stop the service first)
 ```
 
 - *"permission denied opening /dev/uhid"*: install the package's udev rule, then log out and back in. Check with `getfacl /dev/uhid`.
-- *"/dev/uhid not found"*: run `sudo modprobe uhid`. If the module is missing, install `linux-modules-extra-$(uname -r)`.
+- *"/dev/uhid not found"*: run `sudo modprobe uhid`. If the module is missing, install `linux-modules-extra-$(uname -r)` (Debian, Ubuntu) or `kernel-modules-core-$(uname -r)` (Fedora); if the kernel was just updated, restart.
 - *"Your passkeys cannot be opened"*: the login keyring is locked or unavailable, or the passkey file cannot be decrypted. Unlock the keyring and choose **Try Again**. *Delete All Passkeys…* starts over and keeps the unreadable file aside as `credentials.enc.unreadable-<time>`.
 - *The browser doesn't see a security key*: check that `ls -l /dev/hidraw*` lists a device your user can access. If you use a snap browser, see the limitations above.
 - *No verification dialog appears*: a polkit authentication agent must be running. GNOME Shell provides one.

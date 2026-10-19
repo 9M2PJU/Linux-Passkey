@@ -11,7 +11,7 @@ Snapshot after the third development session (19 October 2026).
 - **Passkeys app** (GTK4/libadwaita): list, search, inspect and delete passkeys, settings, status, and reset. It also provides the fallback approval window.
 - **GNOME Shell extension**: approval prompts with an account picker, and a top-bar menu.
 - **Browser extension** (Manifest V3, Chromium- and Firefox-based browsers): makes `passkeyd` a platform authenticator, as Windows Hello is. `passkeyd` acts as the WebAuthn client on this path (origin from the browser, RP ID checked against the Public Suffix List); a native messaging host connects them, and the daemon registers the host with every browser profile it finds.
-- **Packaging**: two `.deb` packages (app + service, and the GNOME extension), the GNOME extension zip, browser extension zips for the Chrome Web Store and Firefox Add-ons, a systemd user unit, D-Bus activation, a udev rule, a polkit policy, man pages and AppStream metadata.
+- **Packaging**: the service and the GNOME extension as `.deb` (Debian, Ubuntu), `.rpm` (Fedora/RHEL 10, openSUSE) and Arch packages, in signed apt, dnf/zypper and pacman repositories at packages.akileswar.com that CI installs from on each family; the GNOME extension zip, browser extension zips for the Chrome Web Store and Firefox Add-ons, a systemd user unit, D-Bus activation, a udev rule, a polkit policy, man pages and AppStream metadata.
 
 ### Verified
 | What | Where |
@@ -42,7 +42,7 @@ Snapshot after the third development session (19 October 2026).
 
 ### Release tasks
 - Publish the browser extension to the Chrome Web Store and Firefox Add-ons (`make browser-extension-zip`), then add the store IDs to `CHROMIUM_EXTENSION_IDS` in `linux_passkey/browsers.py`.
-- Tag `v0.1.0`; the CI release job attaches the `.deb`s and the extension zips.
+- Add the repository signing key as the `LINUX_PASSKEY_GPG_KEY` secret, then tag `v0.1.0`; the CI release job attaches every package, the signed repository tree and the extension zips, and packages.akileswar.com picks the tree up.
 - Submit the extension to extensions.gnome.org (`make extension-zip`).
 - Register a USB product ID (pid.codes) and replace the test ID.
 

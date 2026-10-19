@@ -88,19 +88,49 @@ class UhidError(OSError):
     pass
 
 
-def missing_module_hint(path=UHID_PATH):
+def _os_family(os_release="/etc/os-release"):
+    """The distribution's ID and ID_LIKE words from os-release."""
+    words = set()
+    try:
+        with open(os_release, encoding="utf-8") as f:
+            for line in f:
+                key, _, value = line.strip().partition("=")
+                if key in ("ID", "ID_LIKE"):
+                    words.update(value.strip("\"'").split())
+    except OSError:
+        pass
+    return words
+
+
+def missing_module_hint(path=UHID_PATH, modules="/lib/modules", os_release="/etc/os-release"):
     """Explain how to get /dev/uhid on this system."""
     release = os.uname().release
-    module_dir = "/lib/modules/%s/kernel/drivers/hid" % release
+    if not os.path.isdir(os.path.join(modules, release)):
+        # Arch and others remove the old kernel's modules on upgrade.
+        return (
+            "%s not found: the modules of the running kernel %s are not installed; "
+            "if the kernel was just updated, restart the computer" % (path, release)
+        )
+    module_dir = os.path.join(modules, release, "kernel", "drivers", "hid")
     try:
         has_module = any(n.startswith("uhid.ko") for n in os.listdir(module_dir))
     except OSError:
         has_module = False
     if has_module:
         return "%s not found; run 'sudo modprobe uhid'" % path
+    if _os_family(os_release) & {"debian", "ubuntu"}:
+        return (
+            "%s not found: this kernel has no uhid module; install it with "
+            "'sudo apt install linux-modules-extra-%s'" % (path, release)
+        )
+    if "fedora" in _os_family(os_release):
+        return (
+            "%s not found: this kernel has no uhid module; install it with "
+            "'sudo dnf install kernel-modules-core-%s'" % (path, release)
+        )
     return (
-        "%s not found: this kernel has no uhid module; install it with "
-        "'sudo apt install linux-modules-extra-%s'" % (path, release)
+        "%s not found: this kernel has no uhid module; install the package of "
+        "your distribution that has the uhid kernel module (CONFIG_UHID)" % path
     )
 
 

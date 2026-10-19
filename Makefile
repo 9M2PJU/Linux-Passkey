@@ -4,13 +4,16 @@
 #   sudo make install          install everything under /usr/local
 #   make extension-zip         build the GNOME Shell extension for extensions.gnome.org
 #   make browser-extension-zip build the browser extension for its stores
+#   make dist                  build the release tarball (RPM spec and PKGBUILD source)
 #   make deb                   build Debian packages in ../
+#   make rpm                   build RPM packages in dist/ (needs rpmbuild)
 
 PREFIX ?= /usr/local
 DESTDIR ?=
 PYTHON ?= python3
 
 bindir = $(PREFIX)/bin
+# Arch keeps helpers in /usr/lib/linux-passkey: make libexecdir=/usr/lib/linux-passkey
 libexecdir = $(PREFIX)/libexec/linux-passkey
 datadir = $(PREFIX)/share
 pkgdatadir = $(datadir)/linux-passkey
@@ -26,7 +29,7 @@ SUBST = sed -e 's|@bindir@|$(bindir)|g' -e 's|@pkgdatadir@|$(pkgdatadir)|g' -e '
 
 LINGUAS = $(shell cat po/LINGUAS 2>/dev/null)
 
-.PHONY: all check lint pot install install-app install-locale install-extension uninstall extension-zip browser-extension-zip deb clean
+.PHONY: all check lint pot install install-app install-locale install-extension uninstall extension-zip browser-extension-zip dist deb rpm clean
 
 all:
 	@echo "Nothing to build. Try 'make check' or 'sudo make install'."
@@ -126,8 +129,20 @@ extension-zip:
 browser-extension-zip:
 	$(PYTHON) tools/pack-extension.py dist
 
+# The tarball of the committed tree that the RPM spec and the PKGBUILD build
+# from; CI attaches it to each release.
+dist:
+	mkdir -p dist
+	git archive --format=tar.gz --prefix=linux-passkey-$(VERSION)/ -o dist/linux-passkey-$(VERSION).tar.gz HEAD
+	@echo "Built dist/linux-passkey-$(VERSION).tar.gz"
+
 deb:
 	dpkg-buildpackage -us -uc -b
+
+rpm: dist
+	rpmbuild -bb packaging/rpm/linux-passkey.spec \
+		--define "_sourcedir $(CURDIR)/dist" --define "_rpmdir $(CURDIR)/dist" \
+		--define "_build_name_fmt %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm"
 
 clean:
 	rm -rf dist build .pytest_cache
