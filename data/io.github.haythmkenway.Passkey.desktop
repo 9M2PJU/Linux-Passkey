@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Passkeys
+GenericName=Passkey Manager
+Comment=Manage the passkeys stored on this computer
+Exec=ubuntu-passkey
+Icon=io.github.haythmkenway.Passkey
+Terminal=false
+Categories=GTK;GNOME;Utility;Security;
+Keywords=passkey;webauthn;fido;fido2;security key;login;password;
+StartupNotify=true
+DBusActivatable=false

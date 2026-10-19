@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.haythmkenway.Passkey</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Passkeys</name>
+  <summary>Passkeys for Ubuntu</summary>
+  <description>
+    <p>
+      Ubuntu Passkey turns your computer into a FIDO2 security key, so you can
+      create and use passkeys on any website that supports them, in any browser,
+      without extra hardware.
+    </p>
+    <ul>
+      <li>Works with Chrome, Chromium, Firefox, Edge and Brave</li>
+      <li>Passkeys are encrypted with a key kept in your login keyring</li>
+      <li>Confirm sign-ins with your password or fingerprint</li>
+      <li>Approval prompts integrated into GNOME Shell</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">io.github.haythmkenway.Passkey.desktop</launchable>
+  <url type="homepage">https://github.com/HaythmKenway/Ubuntu-Passkey</url>
+  <url type="bugtracker">https://github.com/HaythmKenway/Ubuntu-Passkey/issues</url>
+  <developer id="io.github.haythmkenway">
+    <name>Ubuntu Passkey contributors</name>
+  </developer>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/HaythmKenway/Ubuntu-Passkey/main/docs/screenshots/app.png</image>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.1.0" date="2026-10-19"/>
+  </releases>
+</component>

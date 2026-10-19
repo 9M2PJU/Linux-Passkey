@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+dist/
+build/
+*.egg-info/
+debian/.debhelper/
+debian/debhelper-build-stamp
+debian/files
+debian/*.substvars
+debian/*.debhelper.log
+debian/tmp/
+debian/ubuntu-passkey/
+debian/gnome-shell-extension-ubuntu-passkey/
+debian/*.debhelper

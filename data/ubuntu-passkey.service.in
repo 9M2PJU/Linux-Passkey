@@ -1,0 +1,20 @@
+[Unit]
+Description=Ubuntu Passkey authenticator
+Documentation=https://github.com/HaythmKenway/Ubuntu-Passkey
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=dbus
+BusName=io.github.haythmkenway.Passkey.Daemon
+ExecStart=@bindir@/passkeyd
+Restart=on-failure
+RestartSec=5
+# The daemon only needs /dev/uhid, the session bus and its own data.
+NoNewPrivileges=yes
+LockPersonality=yes
+RestrictRealtime=yes
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=graphical-session.target

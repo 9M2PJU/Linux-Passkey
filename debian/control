@@ -1,0 +1,39 @@
+Source: ubuntu-passkey
+Section: utils
+Priority: optional
+Maintainer: Ubuntu Passkey contributors <noreply@github.com>
+Build-Depends: debhelper-compat (= 13), dh-python, python3:any
+Standards-Version: 4.6.2
+Homepage: https://github.com/HaythmKenway/Ubuntu-Passkey
+Rules-Requires-Root: no
+
+Package: ubuntu-passkey
+Architecture: all
+Depends: ${misc:Depends},
+         ${python3:Depends},
+         python3,
+         python3-cryptography,
+         python3-gi,
+         gir1.2-glib-2.0,
+         gir1.2-gtk-4.0,
+         gir1.2-adw-1 (>= 1.5),
+         gir1.2-secret-1,
+         polkitd | policykit-1,
+         systemd,
+         udev
+Recommends: gnome-shell-extension-ubuntu-passkey, gnome-keyring
+Description: passkeys for Ubuntu (FIDO2 / WebAuthn authenticator)
+ Ubuntu Passkey turns the computer into a FIDO2 security key, so passkeys can
+ be created and used on websites in any browser without extra hardware.
+ .
+ It provides a per-user daemon that exposes a virtual USB security key through
+ /dev/uhid, stores credentials encrypted with a key kept in the login keyring,
+ verifies the user with their password or fingerprint through polkit, and the
+ Passkeys application to manage stored passkeys.
+
+Package: gnome-shell-extension-ubuntu-passkey
+Architecture: all
+Depends: ${misc:Depends}, gnome-shell (>= 45), ubuntu-passkey (= ${binary:Version})
+Description: GNOME Shell integration for Ubuntu Passkey
+ Shows system-modal approval prompts in GNOME Shell when a website wants to
+ create or use a passkey, and adds a Passkeys status menu to the top bar.

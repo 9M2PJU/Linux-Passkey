@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ubuntu-passkey"
+dynamic = ["version"]
+description = "A software FIDO2/WebAuthn authenticator (passkeys) for Ubuntu"
+readme = "README.md"
+license = { text = "GPL-3.0-or-later" }
+requires-python = ">=3.10"
+dependencies = ["cryptography>=3.4", "PyGObject>=3.42"]
+
+[project.optional-dependencies]
+test = ["pytest", "fido2>=1.1"]
+
+[project.scripts]
+passkeyd = "ubuntu_passkey.daemon:main"
+
+[project.gui-scripts]
+ubuntu-passkey = "ubuntu_passkey.app.main:main"
+
+[project.urls]
+Homepage = "https://github.com/HaythmKenway/Ubuntu-Passkey"
+
+[tool.setuptools]
+packages = ["ubuntu_passkey", "ubuntu_passkey.app"]
+
+[tool.setuptools.dynamic]
+version = { attr = "ubuntu_passkey.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

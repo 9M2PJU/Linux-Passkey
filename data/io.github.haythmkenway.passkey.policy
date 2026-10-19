@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Ubuntu Passkey</vendor>
+  <vendor_url>https://github.com/HaythmKenway/Ubuntu-Passkey</vendor_url>
+  <icon_name>io.github.haythmkenway.Passkey</icon_name>
+
+  <!-- User verification for passkeys: the user proves who they are with
+       their own password (or fingerprint, if enabled in PAM). Never cached. -->
+  <action id="io.github.haythmkenway.passkey.verify">
+    <description>Verify your identity to use a passkey</description>
+    <message>Confirm your identity to use your passkey</message>
+    <defaults>
+      <allow_any>auth_self</allow_any>
+      <allow_inactive>auth_self</allow_inactive>
+      <allow_active>auth_self</allow_active>
+    </defaults>
+  </action>
+</policyconfig>

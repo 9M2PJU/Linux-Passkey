@@ -1,0 +1,40 @@
+.passkey-dialog-icon {
+  margin-bottom: 12px;
+}
+
+.passkey-dialog-account {
+  font-weight: bold;
+  margin-top: 12px;
+}
+
+.passkey-dialog-hint {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9em;
+  margin-top: 12px;
+}
+
+.passkey-account-list {
+  margin-top: 18px;
+  spacing: 6px;
+}
+
+.passkey-account {
+  padding: 10px 16px;
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.06);
+  text-align: left;
+}
+
+.passkey-account:hover,
+.passkey-account:focus {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.passkey-account:checked {
+  background-color: #3584e4;
+  color: #ffffff;
+}
+
+.passkey-active {
+  color: #f26b3a;
+}
