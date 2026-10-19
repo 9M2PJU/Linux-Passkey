@@ -53,7 +53,7 @@ class PasskeyIndicator extends PanelMenu.Button {
             this._statusItem.label.text = _('Passkeys cannot be opened');
         else if (status.state === 'starting')
             this._statusItem.label.text = _('Opening passkeys…');
-        else if (status.device_active)
+        else if (status.device_active || status.device_supported === false)
             this._statusItem.label.text = _('Passkeys ready');
         else
             this._statusItem.label.text = _('Security key unavailable');

@@ -52,6 +52,8 @@ class Daemon:
         self.hid = CtapHidDevice(self, self._send_report)
         self.device = UhidDevice(self.hid.handle_report, path=uhid_path, usb_id=usb_id)
         self.device_error = ""
+        # Confinement keeps /dev/uhid out of a snap's reach (snap/snapcraft.yaml).
+        self.device_supported = not os.environ.get("SNAP")
         self.loop = None
         self._lock = threading.Lock()
         self._retry_id = 0
@@ -103,6 +105,9 @@ class Daemon:
             )
         store.add_listener(lambda: self.service.emit("CredentialsChanged"))
         self.service.emit("CredentialsChanged")
+        if not self.device_supported:
+            log.info("no virtual security key in the snap; browsers use the extension")
+            return
         try:
             self.device.start()
             self.device_error = ""
@@ -155,7 +160,8 @@ class Daemon:
             "version": __version__,
             "state": state,
             "error": self.store_error,
-            "device_active": store is not None and self.device_error == "",
+            "device_supported": self.device_supported,
+            "device_active": store is not None and self.device_supported and self.device_error == "",
             "device_open": self.device.opened,
             "device_error": self.device_error,
             "credential_count": len(store.list()) if store is not None else 0,

@@ -191,7 +191,7 @@ class PasskeyWindow(Adw.ApplicationWindow):
             )
         elif state == "starting":
             self._show_banner(_("Opening your passkeys…"))
-        elif not status.get("device_active", False):
+        elif status.get("device_supported", True) and not status.get("device_active", False):
             self._show_banner(
                 _("The virtual security key is unavailable: %s") % status.get("device_error", ""),
                 _("Help"),
@@ -201,11 +201,14 @@ class PasskeyWindow(Adw.ApplicationWindow):
             self.banner.set_revealed(False)
 
         self.service_row.set_subtitle(_("Running (version %s)") % status.get("version", "?"))
-        self.device_row.set_subtitle(
-            (_("In use by a browser") if status.get("device_open") else _("Ready"))
-            if status.get("device_active")
-            else _("Unavailable")
-        )
+        if not status.get("device_supported", True):
+            self.device_row.set_subtitle(_("Not included in the snap; browsers use the extension"))
+        else:
+            self.device_row.set_subtitle(
+                (_("In use by a browser") if status.get("device_open") else _("Ready"))
+                if status.get("device_active")
+                else _("Unavailable")
+            )
         self.verify_row.set_subtitle(
             _("System authentication (password or fingerprint)")
             if status.get("verification") == "polkit"

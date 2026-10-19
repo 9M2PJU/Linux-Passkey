@@ -85,3 +85,12 @@ def test_keyring_marker_without_keyring_fails(env, monkeypatch):
     )
     with pytest.raises(MasterKeyError):
         mgr.get()
+
+
+def test_snap_uses_its_own_keyring_item(monkeypatch):
+    from linux_passkey import masterkey
+
+    monkeypatch.delenv("SNAP", raising=False)
+    assert masterkey.schema_name() == masterkey.SCHEMA_NAME
+    monkeypatch.setenv("SNAP", "/snap/linux-passkey/x1")
+    assert masterkey.schema_name() == masterkey.SCHEMA_NAME + ".Snap"

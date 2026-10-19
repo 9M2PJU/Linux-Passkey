@@ -33,6 +33,16 @@ def make_credential(d, name="alice"):
     return d.authenticator.process(msg, Request())
 
 
+def test_snap_has_no_virtual_key(bus, env, monkeypatch):
+    from linux_passkey.daemon import Daemon
+
+    monkeypatch.setenv("SNAP", "/snap/linux-passkey/x1")
+    d = Daemon(uhid_path="/nonexistent/uhid", key_backend="file")
+    status = d.status()
+    assert status["device_supported"] is False
+    assert status["device_active"] is False
+
+
 def test_status_reports_missing_device(daemon):
     status = call(connect(), "GetStatus")[0]
     assert status["device_active"] is False

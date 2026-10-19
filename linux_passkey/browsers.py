@@ -33,11 +33,17 @@ CHROMIUM_BROWSERS = (
     "vivaldi",
     "vivaldi-snapshot",
 )
-# Firefox-based browsers: their folder under the home directory. The snap
-# Firefox reaches hosts through the WebExtensions portal, which reads
+# Firefox-based browsers: their folder under the home directory, and where
+# their profiles.ini shows the browser has been used. The snap Firefox
+# reaches hosts through the WebExtensions portal, which reads
 # ~/.mozilla/native-messaging-hosts.
-FIREFOX_BROWSERS = (".mozilla", ".librewolf", ".floorp", ".waterfox", ".zen")
-FIREFOX_MARKERS = {".mozilla": ("snap/firefox",)}
+FIREFOX_BROWSERS = {
+    ".mozilla": (".mozilla/firefox", "snap/firefox/common/.mozilla/firefox"),
+    ".librewolf": (".librewolf",),
+    ".floorp": (".floorp",),
+    ".waterfox": (".waterfox",),
+    ".zen": (".zen",),
+}
 
 
 def manifests(host_path):
@@ -68,12 +74,13 @@ def host_folders(home=None):
     else:
         home = home or os.path.expanduser("~")
         config = os.environ.get("XDG_CONFIG_HOME") or os.path.join(home, ".config")
+    # A real profile, not just the folder: other tools, and snapd for a
+    # personal-files plug, create the host folders of browsers never used.
     for name in CHROMIUM_BROWSERS:
-        if os.path.isdir(os.path.join(config, name)):
+        if os.path.isfile(os.path.join(config, name, "Local State")):
             yield os.path.join(config, name, "NativeMessagingHosts"), "chromium"
-    for name in FIREFOX_BROWSERS:
-        markers = (name,) + FIREFOX_MARKERS.get(name, ())
-        if any(os.path.isdir(os.path.join(home, m)) for m in markers):
+    for name, profiles in FIREFOX_BROWSERS.items():
+        if any(os.path.isfile(os.path.join(home, p, "profiles.ini")) for p in profiles):
             yield os.path.join(home, name, "native-messaging-hosts"), "firefox"
 
 

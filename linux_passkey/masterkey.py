@@ -19,6 +19,18 @@ KEY_SIZE = 32
 SCHEMA_NAME = "io.github.haythmkenway.Passkey.MasterKey"
 
 
+def schema_name():
+    """The keyring schema for this installation.
+
+    The snap keeps its passkeys apart from a package install's, and the two
+    share one login keyring, so each needs its own item: storing a key
+    replaces any item with the same schema and attributes.
+    """
+    if os.environ.get("SNAP"):
+        return SCHEMA_NAME + ".Snap"
+    return SCHEMA_NAME
+
+
 class MasterKeyError(RuntimeError):
     pass
 
@@ -60,7 +72,7 @@ class SecretServiceBackend:
 
             self._secret = Secret
             self._schema = Secret.Schema.new(
-                SCHEMA_NAME,
+                schema_name(),
                 Secret.SchemaFlags.NONE,
                 {"purpose": Secret.SchemaAttributeType.STRING},
             )

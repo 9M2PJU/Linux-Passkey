@@ -120,8 +120,15 @@ def test_errors_carry_dom_exception_names(host):
 
 def test_register_browsers(tmp_path, monkeypatch):
     home = tmp_path / "home"
-    (home / ".config" / "BraveSoftware" / "Brave-Browser").mkdir(parents=True)
-    (home / "snap" / "firefox").mkdir(parents=True)  # the snap Firefox
+    brave_profile = home / ".config" / "BraveSoftware" / "Brave-Browser"
+    brave_profile.mkdir(parents=True)
+    (brave_profile / "Local State").write_text("{}")
+    snap_firefox = home / "snap" / "firefox" / "common" / ".mozilla" / "firefox"
+    snap_firefox.mkdir(parents=True)
+    (snap_firefox / "profiles.ini").write_text("[General]\n")
+    # Folders without a profile, as snapd and other tools leave behind.
+    (home / ".config" / "vivaldi" / "NativeMessagingHosts").mkdir(parents=True)
+    (home / ".zen" / "native-messaging-hosts").mkdir(parents=True)
     monkeypatch.setenv("XDG_CONFIG_HOME", str(home / ".config"))
     written = browsers.register("/usr/libexec/linux-passkey/native-host", home=str(home))
     brave = home / ".config/BraveSoftware/Brave-Browser/NativeMessagingHosts" / (browsers.HOST_NAME + ".json")
@@ -136,6 +143,7 @@ def test_register_browsers(tmp_path, monkeypatch):
 def test_register_browsers_from_a_snap(tmp_path, monkeypatch):
     real = tmp_path / "real"
     (real / ".config" / "google-chrome").mkdir(parents=True)
+    (real / ".config" / "google-chrome" / "Local State").write_text("{}")
     monkeypatch.setenv("SNAP_REAL_HOME", str(real))
     monkeypatch.setenv("HOME", str(tmp_path / "snap-home"))
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "snap-home" / ".config"))
