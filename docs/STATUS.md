@@ -1,6 +1,6 @@
 # Project status and test plan
 
-Snapshot after the third development session (19 October 2026), on the `platform-authenticator` branch (PR #2).
+Snapshot after the third development session (19 October 2026).
 
 ## Done
 
@@ -11,7 +11,7 @@ Snapshot after the third development session (19 October 2026), on the `platform
 - **Passkeys app** (GTK4/libadwaita): list, search, inspect and delete passkeys, settings, status, and reset. It also provides the fallback approval window.
 - **GNOME Shell extension**: approval prompts with an account picker, and a top-bar menu.
 - **Browser extension** (Manifest V3, Chromium- and Firefox-based browsers): makes `passkeyd` a platform authenticator, as Windows Hello is. `passkeyd` acts as the WebAuthn client on this path (origin from the browser, RP ID checked against the Public Suffix List); a native messaging host connects them, and the daemon registers the host with every browser profile it finds.
-- **Packaging**: two `.deb` packages (app + service, and the GNOME extension), a strict snap (`linux-passkey`, registered in the Snap Store), the GNOME extension zip, browser extension zips for the Chrome Web Store and Firefox Add-ons, a systemd user unit, D-Bus activation, a udev rule, a polkit policy, man pages and AppStream metadata.
+- **Packaging**: two `.deb` packages (app + service, and the GNOME extension), the GNOME extension zip, browser extension zips for the Chrome Web Store and Firefox Add-ons, a systemd user unit, D-Bus activation, a udev rule, a polkit policy, man pages and AppStream metadata.
 
 ### Verified
 | What | Where |
@@ -24,17 +24,15 @@ Snapshot after the third development session (19 October 2026), on the `platform
 | Real Chrome 151 over the virtual USB key: registration on webauthn.io with the fallback approval window and polkit | Same laptop |
 | A github.com passkey registered with Brave 1.93 | Same laptop |
 | Upgrade from the `ubuntu-passkey` packages to `linux-passkey` kept both stored passkeys | Same laptop |
-| The snap built by CI, installed and run: daemon owns its bus name through the `passkey-daemon` slot; the snap's native host reaches it through `passkey-client`; origin check rejects a foreign site; a platform registration with the approval window and polkit verification (UV flag set); host manifests written to the real home | Same laptop, snapd 2.77.1 |
 | Standards audit | [COMPLIANCE.md](COMPLIANCE.md) |
 
 ## Still to do
 
 ### Must verify before release (on a real desktop)
 1. **The browser extension in real browsers:** load it unpacked in Brave or Chrome and in Firefox, and confirm that GitHub stops reporting partial passkey support, that registration and sign-in go through our prompt, and that security keys and phones still reach the browser's own dialog.
-2. **The snap's master key in the keyring.** In the snap test the daemon logged "created new master key in keyring backend", yet afterwards the login keyring held only the `.deb`'s item; the snap's item (`login/29`) was gone. A snap restart would then fail with "master key missing". Reproduce with `snap install` + `snap connect …:password-manager-service`, restart the daemon, and check. Snap and `.deb` now use separate keyring schemas, so they cannot replace each other's key.
-3. **Snap Firefox through the WebExtensions portal**, and other distributions (Fedora, Arch) from the snap.
-4. **GNOME 50 (Ubuntu 26.04 LTS).** In a headless test VM, GNOME Shell 50.1 crashed even with extensions disabled, so the extension was never actually tested on 50. `metadata.json` lists 45–49 only, so 26.04 users can't enable the extension until "50" is added after a successful test. *Test 7.*
-5. **Fingerprint login** through polkit (needs a fingerprint reader). *Test 4b.*
+2. **Snap Firefox through the WebExtensions portal.**
+3. **GNOME 50 (Ubuntu 26.04 LTS).** In a headless test VM, GNOME Shell 50.1 crashed even with extensions disabled, so the extension was never actually tested on 50. `metadata.json` lists 45–49 only, so 26.04 users can't enable the extension until "50" is added after a successful test. *Test 7.*
+4. **Fingerprint login** through polkit (needs a fingerprint reader). *Test 4b.*
 
 ### Known limitations to decide on
 - **Snap browsers** (Ubuntu's default Firefox and Chromium): snapd's `u2f-devices` allow-list may hide our USB ID `1209:0001`. Options: register a PID at pid.codes and ask for it to be added to snapd's list; until then, document the `.deb` and Flatpak browsers as supported.
@@ -43,8 +41,6 @@ Snapshot after the third development session (19 October 2026), on the `platform
 - **No translations yet**; only the `.pot` template is in `po/`.
 
 ### Release tasks
-- Store the Snap Store login for CI: `snapcraft export-login --snaps=linux-passkey --channels=edge,candidate --acls=package_access,package_push,package_release --expires=2027-10-19 creds.txt`, then `gh secret set SNAPCRAFT_STORE_CREDENTIALS --env snap-store < creds.txt`. Pushes to `main` then publish to edge, version tags to candidate.
-- Ask on the Snapcraft forum (store-requests) for auto-connection of `polkit`, `password-manager-service` and `browser-hosts`, and for review of the `passkey-daemon` dbus slot.
 - Publish the browser extension to the Chrome Web Store and Firefox Add-ons (`make browser-extension-zip`), then add the store IDs to `CHROMIUM_EXTENSION_IDS` in `linux_passkey/browsers.py`.
 - Tag `v0.1.0`; the CI release job attaches the `.deb`s and the extension zips.
 - Submit the extension to extensions.gnome.org (`make extension-zip`).

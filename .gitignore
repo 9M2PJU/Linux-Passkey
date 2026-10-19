@@ -14,3 +14,7 @@ debian/linux-passkey/
 debian/gnome-shell-extension-linux-passkey/
 debian/*.debhelper
 .venv/
+
+# Store and registry logins (snapcraft export-login, etc.) belong in CI secrets.
+creds.txt
+*.credentials

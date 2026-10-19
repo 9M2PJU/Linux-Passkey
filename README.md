@@ -7,8 +7,6 @@
 Create and use passkeys on any website, confirmed with your Linux password or fingerprint.<br>
 No phone, no hardware key, and no "partial passkey support" warnings.
 
-<a href="https://snapcraft.io/linux-passkey"><img alt="Get it from the Snap Store" src="https://snapcraft.io/en/dark/install.svg" height="48"></a>
-
 [Install](#install) · [Using it](#using-it) · [Contributing](#contributing) · [Support the project](#support-the-project)
 
 </div>
@@ -45,18 +43,6 @@ Without the GNOME extension, approval prompts open in a window of their own, so 
 - **The Passkeys app:** search, inspect and delete passkeys, see the service status, require verification every time, and reset everything.
 
 ## Install
-
-### From the Snap Store (any distribution with snapd)
-
-```sh
-sudo snap install linux-passkey
-# Until the Store connects these by itself:
-sudo snap connect linux-passkey:polkit
-sudo snap connect linux-passkey:password-manager-service
-sudo snap connect linux-passkey:browser-hosts
-```
-
-Then log out and back in, or open **Passkeys** once, to start the service, and add the [browser extension](#the-browser-extension). The snap has no virtual USB security key, because confinement keeps `/dev/uhid` out of reach; use the `.deb` if you want that too.
 
 ### From the Debian packages (Debian, Ubuntu and derivatives)
 
@@ -213,7 +199,7 @@ Bus name `io.github.haythmkenway.Passkey.Daemon`, object `/io/github/haythmkenwa
 Bug reports, test results from your distribution and browser, translations and code are all welcome.
 
 - **Report a problem:** [open an issue](https://github.com/HaythmKenway/Linux-Passkey/issues) with your distribution, desktop, browser, how you installed Linux Passkey, and the output of `journalctl --user -u linux-passkey -b | tail -50`.
-- **Send a change:** fork the repository, make your change on a branch, run `make check` and `make lint`, and open a pull request. Add a test for every fix; CI runs the suite on Ubuntu 22.04 and 24.04 and builds the packages and the snap.
+- **Send a change:** fork the repository, make your change on a branch, run `make check` and `make lint`, and open a pull request. Add a test for every fix; CI runs the suite on Ubuntu 22.04 and 24.04 and builds the packages.
 - **Translate:** see [Translations](#translations).
 - **Security issues:** please report them privately through [GitHub's security advisories](https://github.com/HaythmKenway/Linux-Passkey/security/advisories/new) rather than in a public issue.
 

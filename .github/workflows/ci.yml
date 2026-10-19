@@ -112,9 +112,11 @@ jobs:
 
   # The Snap Store: every push to main goes to edge, a version tag to
   # candidate (promote it to stable from the Store dashboard). Needs the
-  # SNAPCRAFT_STORE_CREDENTIALS secret (snapcraft export-login).
+  # SNAPCRAFT_STORE_CREDENTIALS secret (snapcraft export-login). Off until
+  # the Store has reviewed the snap's interfaces: set the repository
+  # variable SNAP_PUBLISH to "true" to turn it on.
   snap-publish:
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    if: vars.SNAP_PUBLISH == 'true' && github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     needs: [lint, test, snap]
