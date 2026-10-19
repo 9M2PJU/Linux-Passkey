@@ -33,7 +33,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            debhelper dh-python python3-all zip gettext lintian \
+            build-essential debhelper dh-python python3-all zip gettext lintian \
             python3-gi python3-cryptography python3-pytest
       - name: Build Debian packages
         run: |

@@ -1,6 +1,6 @@
 # Project status and test plan
 
-Snapshot after the second development session, on branch `ccr-ab53c4b8-yzsoqs` (not merged to `main` yet).
+Snapshot after the second development session. The work is merged into `main`.
 
 ## Done
 
@@ -36,7 +36,7 @@ Snapshot after the second development session, on branch `ccr-ab53c4b8-yzsoqs` (
 - **No translations yet**; only the `.pot` template is in `po/`.
 
 ### Release tasks
-- Merge the branch into `main` and check that CI passes on GitHub.
+- Check that CI passes on GitHub (the package job needed `build-essential`).
 - Tag `v0.1.0`; the CI release job attaches the `.deb`s and the extension zip.
 - Submit the extension to extensions.gnome.org (`make extension-zip`).
 - Register a USB product ID (pid.codes) and replace the test ID.
@@ -44,9 +44,9 @@ Snapshot after the second development session, on branch `ccr-ab53c4b8-yzsoqs` (
 ## Test plan for your system (Ubuntu 24.04 desktop)
 
 ```sh
-git clone -b ccr-ab53c4b8-yzsoqs https://github.com/HaythmKenway/Ubuntu-Passkey
+git clone https://github.com/HaythmKenway/Ubuntu-Passkey
 cd Ubuntu-Passkey
-sudo apt install debhelper dh-python python3-all gettext
+sudo apt install build-essential debhelper dh-python python3-all gettext
 make deb
 sudo apt install ../ubuntu-passkey_0.1.0_all.deb ../gnome-shell-extension-ubuntu-passkey_0.1.0_all.deb
 ```
