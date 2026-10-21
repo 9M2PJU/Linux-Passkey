@@ -78,6 +78,22 @@ sudo zypper install linux-passkey gnome-shell-extension-linux-passkey
 
 ### Arch Linux, Manjaro, EndeavourOS
 
+From the AUR ([`linux-passkey`](https://aur.archlinux.org/packages/linux-passkey)):
+
+```sh
+yay -S linux-passkey gnome-shell-extension-linux-passkey
+# or: paru -S linux-passkey gnome-shell-extension-linux-passkey
+# or manually:
+# git clone https://aur.archlinux.org/linux-passkey.git && cd linux-passkey && makepkg -si
+systemctl --user enable --now linux-passkey.service
+```
+
+Note: the AUR `passkeyd` / `passkeyd-bin` packages are a different project
+([bjn7/passkeyd](https://github.com/bjn7/passkeyd)) that installs the same
+`/usr/bin/passkeyd` path, so they conflict with `linux-passkey`.
+
+Or from the signed repository:
+
 ```sh
 curl -fsSL https://packages.akileswar.com/linux-passkey/linux-passkey.asc -o /tmp/linux-passkey.asc
 sudo pacman-key --add /tmp/linux-passkey.asc && sudo pacman-key --lsign-key C3BEB74EE9AD4A01826354C98487FCECCDB6CDB7
